@@ -1,0 +1,89 @@
+
+.home-page {
+  #user-menu {
+    display: none;
+  }
+
+  @media (min-width: $screen-tablet) {
+    #user-menu {
+      display: flex;
+      flex-direction: row;
+      >button {
+        margin-left: 8px;
+      }
+    }
+  }
+  
+  main {
+    background: #FFFFFF;
+    margin: 0 auto 24px;
+    padding: 16px;
+    border-radius: 4px;
+    box-shadow: #f4f4f4;
+  }
+
+  .article-list {
+    .article-item {
+      border-bottom: 1px solid #e5e6eb;
+      padding-bottom: 16px;
+      .article-link {
+        margin: 16px auto;
+        a {
+          color: #000;
+          text-decoration: none;
+          font-size: 18px;
+          font-weight: 600;
+          line-height: 1.6;
+        }
+      }
+      .article-description {
+        color: #5e5e5e;
+        font-size: 14px;
+        line-height: 22px;
+        margin-bottom: 8px;
+      }
+      .update-time,.views,.article-creator {
+        font-size: 13px;
+        color: #86909c;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        margin-right: 4px;
+        i {
+          margin-right: 4px;
+        }
+      }
+    }
+    .article-item:last-child {
+      border-bottom-width: 0;
+    }
+  }
+  .page-list {
+    margin-top: 24px;
+    .page {
+      display: inline-block;
+      padding: 8px;
+      margin-right: 4px;
+      min-width: 16px;
+      text-decoration: none;
+      text-align: center;
+      color: #000000;
+    }
+    .page.active {
+      background-color: rgba(42, 142, 224, 0.84);
+      color: #FFFFFF;
+    }
+  }
+
+  @media (min-width: $screen-desktop) {
+    main {
+      width: 960px;
+      margin: 0 auto;
+    }
+
+    .new-button {
+      display: block;
+    }
+  }
+}
+

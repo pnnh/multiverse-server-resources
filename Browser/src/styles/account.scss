@@ -1,0 +1,75 @@
+
+.account-page {
+  .message-error {
+    color: red;
+  }
+
+  .message-info {
+    color: #333333;
+  }
+
+  .row-mail, .row-password, .row-login {
+    margin-bottom: 16px;
+  }
+
+  .send-mail-link {
+    margin-left: 8px;
+  }
+
+  @media (min-width: $screen-desktop) {
+    .content-body {
+      width: 960px;
+      margin: 0 auto;
+    }
+  }
+}
+
+.personal-page, .account-edit-page {
+  @media (min-width: $screen-desktop) {
+    .content-body {
+      width: 960px;
+      margin: 0 auto;
+    }
+  }
+}
+
+.personal-page {
+  .user-info {
+    display: flex;
+
+    .row-photo {
+      margin-top: 16px;
+      margin-left: 32px;
+    }
+
+    .photo {
+      width: 128px;
+      height: 128px;
+      border-radius: 40px;
+      padding: 2px;
+      border: solid 2px #07a;
+    }
+  }
+}
+
+.account-edit-page {
+  .row-email input, .row-nickname input {
+    width: 300px;
+  }
+  .user-info {
+    display: flex;
+  }
+  .column-right {
+    margin-left: 16px;
+    .photo {
+      width: 128px;
+      height: 128px;
+      border-radius: 40px;
+      padding: 2px;
+      border: solid 2px #07a;
+    }
+  }
+  .row-photo, .row-description {
+    margin: 16px 0;
+  }
+}

@@ -1,0 +1,39 @@
+@import "src/styles/media";
+
+.random-password-page {
+  .random-password {
+    background: #FFFFFF;
+    padding: 16px;
+    border-radius: 4px;
+
+    .symbol-row, .length-row {
+      margin-bottom: 8px;
+    }
+
+    .tool-title {
+      margin-top: 0
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      color: #5c5c5c;
+    }
+
+    .gen-password {
+      font-size: 20px;
+    }
+
+    .password-item {
+      color: #000;
+      margin-bottom: 16px;
+    }
+  }
+
+  @media (min-width: $screen-desktop) {
+    .random-password {
+      width: 960px;
+      margin: 0 auto;
+    }
+  }
+}
+

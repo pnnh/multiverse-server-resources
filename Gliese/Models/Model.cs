@@ -22,7 +22,7 @@ public class BloggingContext : DbContext
         }
 }
 
- [Table("articles")]
+[Table("articles")]
 [PrimaryKey(nameof(Pk))]
 public class Articles
 { 

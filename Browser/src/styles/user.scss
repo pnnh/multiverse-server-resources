@@ -1,0 +1,26 @@
+
+.user-info-page {
+  @media (min-width: $screen-desktop) {
+    .content-body {
+      width: 960px;
+      margin: 0 auto;
+    }
+  }
+
+  .user-info {
+    display: flex;
+
+    .row-photo {
+      margin-top: 16px;
+      margin-left: 32px;
+    }
+
+    .photo {
+      width: 128px;
+      height: 128px;
+      border-radius: 40px;
+      padding: 2px;
+      border: solid 2px #07a;
+    }
+  }
+}

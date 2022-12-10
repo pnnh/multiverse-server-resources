@@ -15,7 +15,8 @@
       "applicationUrl": "http://0.0.0.0:5118",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "hotReloadProfile": "aspnetcore"
     },
     "https": {
       "commandName": "Project",
