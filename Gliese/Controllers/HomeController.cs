@@ -20,7 +20,7 @@ public class HomeController : Controller
 
     public IActionResult Data()
     {
-        using var db = new BloggingContext();
+        //using var db = new BloggingContext();
 
 
         // Create
@@ -28,13 +28,13 @@ public class HomeController : Controller
         // db.Add(new Blog { Url = "http://blogs.msdn.com/adonet" });
         // db.SaveChanges();
 
-        // Read
-        Console.WriteLine("Querying for a blog");
-        var fBlogs = db.Articles.Where(b => b.Title != "").ToList();
-        foreach (var a in fBlogs)
-        {
-            Console.WriteLine($"article: {a.Pk} {a.Title}");
-        }
+        // // Read
+        // Console.WriteLine("Querying for a blog");
+        // var fBlogs = db.Articles.Where(b => b.Title != "").ToList();
+        // foreach (var a in fBlogs)
+        // {
+        //     Console.WriteLine($"article: {a.Pk} {a.Title}");
+        // }
 
         // // Update
         // Console.WriteLine("Updating the blog and adding a post");
