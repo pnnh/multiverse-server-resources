@@ -15,7 +15,7 @@ const customResolver = nodeResolve({
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const outDir = '../target/assets'
+const outDir = '../Gliese/wwwroot/assets'
 
 export default {
   input: 'src/index.tsx',

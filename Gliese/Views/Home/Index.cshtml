@@ -1,8 +1,48 @@
-﻿@{
+﻿@model IndexViewModel
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!DOCTYPE html>
+	<html lang="zh">
+	<head>
+        <partial name="../Shared/_HeadMeta.cshtml" />
+    <link rel='stylesheet' type='text/css' href='/assets/index.css' />
+		<title>泛涵</title>
+	</head>
+	<body class="home-page">
+	<div>  
+        <partial name="../Shared/_Header.cshtml" />
+		<main>
+			<div class="fx-grid">
+				<div class="ms-Grid-col ms-sm12 ms-xl8">
+					<div class="article-list">
+                        @foreach (var m in Model.Range ){
+							<div class="article-item">
+								<div data-name="{{.Pk}}" data-type="object">
+									<div class="article-link">
+										<a href="/article/read/@m.Pk">@m.Title</a>
+									</div>
+									<div class="article-description">
+                                        @m.Description
+									</div>
+									<div class="article-info">
+										<span class="update-time"><i class="ri-time-line"></i></span>
+										<span class="views"><i class="ri-eye-line"></i></span>
+									</div>
+								</div>
+							</div>
+                        } 
+					</div>
+					<div class="page-list">
+						{{ .pagesHtml }}
+					</div>
+				</div>
+			</div>
+		</main> 
+	</div>
+	<div id="root"></div>
+	<script id="data" type="application/json">{{.data}}</script>
+    <script type='module' crossorigin src='/assets/index.js'></script>
+	</body>
+	</html>

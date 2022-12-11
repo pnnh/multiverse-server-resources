@@ -6,16 +6,23 @@ namespace Gliese.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
+    private readonly ILogger<HomeController> logger;
+    private readonly BloggingContext dataContext;
 
-    public HomeController(ILogger<HomeController> logger)
+
+    public HomeController(ILogger<HomeController> logger, BloggingContext configuration)
     {
-        _logger = logger;
+        this.logger = logger;
+        dataContext = configuration;
     }
 
     public IActionResult Index()
     {
-        return View();
+        var fBlogs = dataContext.Articles.Where(b => b.Title != "").ToList();
+        var model = new IndexViewModel {
+            Range = fBlogs,
+        };
+        return View(model);
     }
 
     public IActionResult Data()
