@@ -24,7 +24,7 @@ public class ArticleController : Controller
         {
             return Content("404");
         }
-        
+
         var viewModel = model.ToViewModel();
         return View(viewModel);
     }

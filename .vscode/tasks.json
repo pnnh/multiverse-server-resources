@@ -33,9 +33,14 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/Gliese/Gliese.csproj"
+                "${workspaceFolder}/Gliese/Gliese.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
             ],
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}/Gliese/"
+            }
         }
     ]
 }
