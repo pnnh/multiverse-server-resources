@@ -23,7 +23,7 @@ namespace Gliese
             builder.Services.AddControllersWithViews();
 
             var config = await AwsConfig.GetConfig();
-            Console.WriteLine($"pgdsn: {config.PgDsn}");
+            //Console.WriteLine($"pgdsn: {config.PgDsn}");
 
             builder.Services.AddDbContext<BloggingContext>(options =>
             {

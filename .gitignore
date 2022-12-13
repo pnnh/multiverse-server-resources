@@ -7,3 +7,4 @@ riderModule.iml
 .vs/
 Gliese/wwwroot/assets/
 Browser/debug/
+Docker/bin
