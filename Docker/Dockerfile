@@ -2,12 +2,12 @@ FROM ubuntu:22.10
 
 RUN apt-get update \
 		&& apt-get install -y ca-certificates \
-		&& apt-get install -y libc6 \
+		&& apt-get install -y libc6 libicu-dev \
 		&& rm -rf /var/lib/apt/lists/* \
 		&& apt-get clean
 
 # 指定RUN工作目录
-WORKDIR /home
+WORKDIR /opt/bin
 
 ENV LD_LIBRARY_PATH /opt/lib
 

@@ -28,19 +28,21 @@ namespace Gliese.Services
             //ParseAppConfig();
         }
 
-        static async Task<string> LoadConfigFromAws()
+        static async Task<string> LoadConfigFromAws(string fileName, string envName)
         {
 
             IAmazonAppConfigData client = new AmazonAppConfigDataClient(Amazon.RegionEndpoint.APEast1);
 
             var sessionRequest = new StartConfigurationSessionRequest();
 
-            sessionRequest.ApplicationIdentifier = "sfx";
+            sessionRequest.ApplicationIdentifier = "polaris.direct";
 
-            sessionRequest.ConfigurationProfileIdentifier = "debug.config";
-            sessionRequest.EnvironmentIdentifier = "debug";
+#if (DEBUG)
+            sessionRequest.ApplicationIdentifier = "debug.polaris.direct";
+#endif
 
-
+            sessionRequest.ConfigurationProfileIdentifier = fileName;
+            sessionRequest.EnvironmentIdentifier = envName;
 
             var sessionResponse = await client.StartConfigurationSessionAsync(sessionRequest);
             if (sessionResponse.HttpStatusCode != HttpStatusCode.Created)
@@ -73,7 +75,7 @@ namespace Gliese.Services
                 return currentConfig;
             }
             var configModel = new ConfigModel();
-            var configContent = await LoadConfigFromAws();
+            var configContent = await LoadConfigFromAws("main.config", "default");
             if (String.IsNullOrEmpty(configContent))
                 throw new Exception("aws 配置为空");
             //var configMap = new Dictionary<string, string>();
