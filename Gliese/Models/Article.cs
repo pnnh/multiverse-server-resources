@@ -8,6 +8,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Markdig;
+using Gliese.Utils;
 
 namespace Gliese.Models
 {
@@ -64,7 +65,7 @@ namespace Gliese.Models
             else
             {
                 var deserialized = JsonConvert.DeserializeObject(this.Body);
-                var bodyHtml = buildBody(tocList, deserialized); 
+                var bodyHtml = ArticleUtils.BuildBody(tocList, deserialized);
                 bodyHtmlBuilder.Append(bodyHtml);
             }
             var viewModel = new ArticleReadViewModel();
@@ -77,127 +78,9 @@ namespace Gliese.Models
 
             return viewModel;
         }
-
-        string buildBody(List<TocItem> tocList, object? node)
-        {
-            if (node == null)
-                return "";
-            var token = node as JToken;
-            if (token == null)
-                return "";
-            var children = token["children"] as JArray;
-            if (children == null)
-                return "";
-            var sb = new StringBuilder();
-            foreach (JObject item in children)
-            {
-                var nodeStr = buildNode(tocList, item);
-                sb.Append(nodeStr);
-            }
-
-            return sb.ToString();
-        }
-
-        string buildNode(List<TocItem> tocList, JObject node)
-        {
-            var nodeName = ((string?)node["name"]);
-            if (nodeName == null)
-                return "";
-            switch (nodeName)
-            {
-                case "paragraph":
-                    return buildParagraph(tocList, node);
-                case "header":
-                    return buildHeader(tocList, node);
-                case "code-block":
-                    return buildCodeBlock(node);
-            }
-
-            return "";
-        }
-
-        string buildParagraph(List<TocItem> tocList, JObject node)
-        {
-            var children = node["children"] as JArray;
-            if (children == null)
-                return "";
-
-            var sb = new StringBuilder();
-            sb.Append("<p>");
-            foreach (JObject item in children)
-            {
-                var nodeStr = buildText(item);
-                sb.Append(nodeStr);
-            }
-            sb.Append("</p>");
-
-            return sb.ToString();
-        }
-        string buildText(JObject node)
-        {
-            var text = ((string?)node["text"]);
-            if (text == null)
-                return "";
-
-            return text;
-        }
-        string buildHeader(List<TocItem> tocList, JObject node)
-        {
-            var header = ((int?)node["header"]);
-            if (header == null)
-                return "";
-
-            var children = node["children"] as JArray;
-            if (children == null)
-                return "";
-
-            var sb = new StringBuilder();
-            sb.Append($"<h{header}>");
-            var headerTitle = "";
-            foreach (JObject item in children)
-            {
-                var nodeStr = buildText(item);
-                headerTitle += nodeStr;
-            }
-            tocList.Add(new TocItem
-            {
-                Title = headerTitle,
-                Header = (int)header,
-            });
-            sb.Append(headerTitle);
-            sb.Append($"</h{header}>");
-
-            return sb.ToString();
-        }
-        string buildCodeBlock(JObject node)
-        {
-            var language = ((string?)node["language"]);
-            if (language == null)
-                return "";
-
-            var children = node["children"] as JArray;
-            if (children == null)
-                return "";
-
-            var sb = new StringBuilder();
-            sb.Append($"<pre class='code' data-lang='{language}'><code>");
-            foreach (JObject item in children)
-            {
-                var nodeStr = buildText(item);
-                sb.Append(nodeStr);
-            }
-            sb.Append($"</code></pre>");
-
-            return sb.ToString();
-        }
-
+ 
     }
 
-    public class TocItem
-    {
-        public string Title = "";
-        public int Header = 0;
-    }
 
     public class ArticleReadViewModel
     {
