@@ -9,6 +9,7 @@ using Amazon.AppConfigData.Model;
 using Gliese.Models;
 using Microsoft.EntityFrameworkCore;
 using Gliese.Services;
+using StackExchange.Redis;
 
 namespace Gliese
 {
@@ -18,13 +19,27 @@ namespace Gliese
         {
 
             var builder = WebApplication.CreateBuilder(args);
+            
+            builder.Logging.ClearProviders().AddSimpleConsole(options => {
+                options.SingleLine = true;
+                options.IncludeScopes = true;
+                options.UseUtcTimestamp = true;
+            });
 
-            // Add services to the container.
             builder.Services.AddControllersWithViews();
 
             var config = await AwsConfig.GetConfig();
-            //Console.WriteLine($"pgdsn: {config.PgDsn}");
-
+            //Configure other services up here
+            var redisConfig = config.Redis;
+            if (redisConfig == null)
+            {
+                throw new Exception("未配置Redis");
+            }
+            var redisOptions = ConfigurationOptions.Parse(redisConfig.Host); // host1:port1, host2:port2, ...
+            redisOptions.Password = redisConfig.Password;
+            var multiplexer = ConnectionMultiplexer.Connect(redisOptions);
+            builder.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+ 
             builder.Services.AddDbContext<BloggingContext>(options =>
             {
                 options.UseNpgsql(config.PgDsn);

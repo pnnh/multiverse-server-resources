@@ -21,12 +21,7 @@ public class SeoController : Controller
 
     [Route("seo/sitemap")]
     public IActionResult Sitemap()
-    {
-        //using var db = new BloggingContext(_configuration); 
-
-        // Read
-        // Console.WriteLine("Querying for a blog");
-
+    { 
         var sitemap = new Sitemap();
  
         sitemap.Add(new Url
@@ -39,8 +34,7 @@ public class SeoController : Controller
 
         var fBlogs = dataContext.Articles.Where(b => b.Title != "").ToList();
         foreach (var a in fBlogs)
-        {
-            //Console.WriteLine($"article: {a.Pk} {a.Title}");
+        { 
             var readUrl = PolarisConfig.SelfUrl + $"/article/read/{a.Pk}";
             var item = new Url
             {

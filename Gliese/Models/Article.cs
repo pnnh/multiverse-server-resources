@@ -64,8 +64,7 @@ namespace Gliese.Models
             else
             {
                 var deserialized = JsonConvert.DeserializeObject(this.Body);
-                var bodyHtml = buildBody(tocList, deserialized);
-                //Console.WriteLine("xxxx");
+                var bodyHtml = buildBody(tocList, deserialized); 
                 bodyHtmlBuilder.Append(bodyHtml);
             }
             var viewModel = new ArticleReadViewModel();

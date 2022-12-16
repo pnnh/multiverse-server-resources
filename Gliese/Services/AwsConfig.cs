@@ -8,14 +8,41 @@ using Gliese.Models;
 using Microsoft.EntityFrameworkCore;
 namespace Gliese.Services
 {
-    public class PolarisConfig {
+    public class PolarisConfig
+    {
         public static string SelfUrl = "https://www.polaris.direct";
     }
 
+    public class RedisConfigModel
+    {
+        public string Host = "";
+        public string Password = "";
+        public int Database = 0;
+
+        public RedisConfigModel(string uri)
+        {
+            Uri myUri = new Uri(uri, UriKind.Absolute);
+            this.Host = myUri.Host;
+            var auth = myUri.AbsoluteUri.Split(":");
+            if (auth.Length > 1)
+            {
+                this.Password = auth[1];
+            }
+            var queryDictionary = System.Web.HttpUtility.ParseQueryString(myUri.Query);
+            var dbStr = queryDictionary["db"];
+            if (!String.IsNullOrEmpty(dbStr))
+            {
+                var db = int.Parse(dbStr);
+                this.Database = db;
+            }
+        }
+
+    }
 
     public class ConfigModel
     {
         public string PgDsn { get; set; } = "";
+        public RedisConfigModel? Redis { get; set; }
     }
 
     public class AwsConfig
@@ -56,15 +83,10 @@ namespace Gliese.Services
             var response = await client.GetLatestConfigurationAsync(request);
             if (response.HttpStatusCode != HttpStatusCode.OK)
                 throw new Exception("GetLatestConfigurationAsync Response HTTP Status Code does not indicate success");
-
-            //var stream = new MemoryStream();
-            // response.Configuration.CopyTo(stream);
-
-
+  
             StreamReader reader = new StreamReader(response.Configuration);
             string text = reader.ReadToEnd();
-
-            //Console.WriteLine($"Config Content \n{text}");
+ 
             return text;
         }
 
@@ -78,7 +100,6 @@ namespace Gliese.Services
             var configContent = await LoadConfigFromAws("main.config", "default");
             if (String.IsNullOrEmpty(configContent))
                 throw new Exception("aws 配置为空");
-            //var configMap = new Dictionary<string, string>();
             var configArray = configContent.Split("\n");
             foreach (var e in configArray)
             {
@@ -90,6 +111,9 @@ namespace Gliese.Services
                 {
                     case "CSHARP_DSN":
                         configModel.PgDsn = value;
+                        break;
+                    case "REDIS":
+                        configModel.Redis = new RedisConfigModel(value);
                         break;
                 }
             }
