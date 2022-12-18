@@ -34,8 +34,16 @@
 							</div>
                         } 
 					</div>
-					<div class="page-list">
-						{{ .pagesHtml }}
+					<div class="page-list">  
+						@if(Model.PrevPage >= 1) {
+							<a>上一页</a>
+						}
+						@for(var n = Model.StartPage; n <= Model.EndPage; ++n) {
+							<a>@n</a>
+						}
+						@if (Model.NextPage <= Model.MaxPage) {
+							<a>下一页</a>
+						} 
 					</div>
 				</div>
 			</div>
