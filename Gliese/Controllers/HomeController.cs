@@ -18,12 +18,12 @@ public class HomeController : Controller
 
     public IActionResult Index(int page = 1)
     {
-        var fBlogs = dataContext.Articles.Where(b => b.Title != "").ToList();
-        var articlesCount = dataContext.Articles.Count();
-
-
         var indexPageSize = 8;
         var currentPage = page;
+        if (currentPage <= 1) {
+            currentPage = 1;
+        }
+        var articlesCount = dataContext.Articles.Count();
         var maxPage = articlesCount / indexPageSize;
         if (articlesCount % indexPageSize != 0)
         {
@@ -46,11 +46,18 @@ public class HomeController : Controller
         int prevPage = currentPage - 1;
         int nextPage = currentPage + 1;
 
+        var offset = (currentPage - 1) * indexPageSize;
+        if (offset < 0) {
+            offset = 0;
+        }
+
+        var fBlogs = dataContext.Articles.Where(b => b.Title != "").Skip(offset).Take(indexPageSize).ToList();
+
         var model = new IndexViewModel
         {
             Range = fBlogs,
             Count = articlesCount,
-            CurrentPage = page,
+            CurrentPage = currentPage,
             StartPage = startPage,
             EndPage = endPage,
             PrevPage = prevPage,

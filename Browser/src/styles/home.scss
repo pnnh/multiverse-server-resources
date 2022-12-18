@@ -22,6 +22,22 @@
     box-shadow: #f4f4f4;
   }
 
+  .page-list {
+    margin-top: 24px;
+    .page {
+      display: inline-block;
+      padding: 8px;
+      margin-right: 4px;
+      min-width: 16px;
+      text-decoration: none;
+      text-align: center;
+      color: #000000;
+    }
+    .page.active {
+      background-color: rgba(42, 142, 224, 0.84);
+      color: #FFFFFF;
+    }
+  }
   .article-list {
     .article-item {
       border-bottom: 1px solid #e5e6eb;
@@ -56,22 +72,6 @@
     }
     .article-item:last-child {
       border-bottom-width: 0;
-    }
-  }
-  .page-list {
-    margin-top: 24px;
-    .page {
-      display: inline-block;
-      padding: 8px;
-      margin-right: 4px;
-      min-width: 16px;
-      text-decoration: none;
-      text-align: center;
-      color: #000000;
-    }
-    .page.active {
-      background-color: rgba(42, 142, 224, 0.84);
-      color: #FFFFFF;
     }
   }
 

@@ -1,14 +1,11 @@
 ﻿@model IndexViewModel
-@{
-    ViewData["Title"] = "Home Page";
-}
 
 <!DOCTYPE html>
 	<html lang="zh">
 	<head>
         <partial name="../Shared/_HeadMeta.cshtml" />
     <link rel='stylesheet' type='text/css' href='/assets/index.css' />
-		<title>泛涵</title>
+		<title>北极星</title>
 	</head>
 	<body class="home-page">
 	<div>  
@@ -19,7 +16,7 @@
 					<div class="article-list">
                         @foreach (var m in Model.Range ){
 							<div class="article-item">
-								<div data-name="{{.Pk}}" data-type="object">
+								<div>
 									<div class="article-link">
 										<a href="/article/read/@m.Pk">@m.Title</a>
 									</div>
@@ -36,13 +33,14 @@
 					</div>
 					<div class="page-list">  
 						@if(Model.PrevPage >= 1) {
-							<a>上一页</a>
+							<a class="page" href="/?page=@Model.PrevPage">上一页</a>
 						}
 						@for(var n = Model.StartPage; n <= Model.EndPage; ++n) {
-							<a>@n</a>
+							var active = n == Model.CurrentPage ? "active" : "";
+							<a class="page @active" href="/?page=@n">@n</a>
 						}
 						@if (Model.NextPage <= Model.MaxPage) {
-							<a>下一页</a>
+							<a class="page" href="/?page=@Model.NextPage">下一页</a>
 						} 
 					</div>
 				</div>

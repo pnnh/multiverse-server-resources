@@ -1,12 +1,9 @@
 @model ArticleReadViewModel
-@{
-    ViewData["Title"] = "Read Page";
-}
 
 <!DOCTYPE html>
 	<html lang="zh">
 	<head> 
-		<title>{{.title}} - 泛涵</title>
+		<title>@Model.Article.Title - 北极星</title>
         <partial name="../Shared/_HeadMeta.cshtml" />
 		<meta name="description" content="{{.description}}"/>
 		<meta name="keywords" content="{{.keywords}}"/>

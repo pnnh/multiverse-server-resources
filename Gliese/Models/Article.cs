@@ -87,7 +87,7 @@ namespace Gliese.Models
         public ArticleModel Article = new ArticleModel();
         public string[] KeywordsList = new string[0];
 
-        public string BodyHtml = "";
+        public string BodyHtml = ""; 
     }
 
 

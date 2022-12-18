@@ -29,7 +29,7 @@ public class ArticleController : Controller
         }
         await UpdateViews(pk);
 
-        var viewModel = model.ToViewModel();
+        var viewModel = model.ToViewModel(); 
         return View(viewModel);
     }
 
