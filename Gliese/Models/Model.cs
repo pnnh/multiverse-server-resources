@@ -7,8 +7,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 public class BloggingContext : DbContext
 {
-    public DbSet<ArticleModel> Articles => Set<ArticleModel>();
-    public DbSet<ArticleViewTable> ArticleViewTable => Set<ArticleViewTable>();
+    public DbSet<ArticleTable> Articles => Set<ArticleTable>();
+    public DbSet<ArticleExtendTable> ArticleExtendTable => Set<ArticleExtendTable>();
+    public DbSet<ArticleViewerTable> ArticleViewerTable => Set<ArticleViewerTable>();
 
     public BloggingContext(DbContextOptions<BloggingContext> options) : base(options)
     {

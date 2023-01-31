@@ -13,10 +13,7 @@
             "targetArchitecture": "x86_64",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "sourceFileMap": {
-                "/Views": "${workspaceFolder}/Views"
-            },
+            }, 
             "console": "integratedTerminal"
         },
         {
@@ -31,10 +28,7 @@
             "targetArchitecture": "x86_64",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "sourceFileMap": {
-                "/Views": "${workspaceFolder}/Views"
-            },
+            }, 
             "console": "integratedTerminal"
         },
         {

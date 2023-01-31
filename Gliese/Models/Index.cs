@@ -1,8 +1,9 @@
 
 using Gliese.Models;
 
-public class IndexViewModel {
-    public List<ArticleModel> Range = new List<ArticleModel>();
+public class IndexViewModel
+{
+    public List<ArticleTable> Range = new List<ArticleTable>();
     public int Count = 0;
     public int CurrentPage = 1;
     public int StartPage = 0;

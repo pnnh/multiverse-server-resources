@@ -2,14 +2,11 @@
 
 
 using System.Net;
-using Amazon.AppConfig;
-using Amazon.AppConfig.Model;
-using Amazon.AppConfigData;
-using Amazon.AppConfigData.Model;
 using Gliese.Models;
 using Microsoft.EntityFrameworkCore;
 using Gliese.Services;
-using StackExchange.Redis;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 
 namespace Gliese
 {
@@ -19,27 +16,21 @@ namespace Gliese
         {
 
             var builder = WebApplication.CreateBuilder(args);
-            
-            builder.Logging.ClearProviders().AddSimpleConsole(options => {
+
+            builder.Logging.ClearProviders().AddSimpleConsole(options =>
+            {
                 options.SingleLine = true;
                 options.IncludeScopes = true;
                 options.UseUtcTimestamp = true;
             });
 
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All));
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
             var config = await AwsConfig.GetConfig();
-            //Configure other services up here
-            var redisConfig = config.Redis;
-            if (redisConfig == null)
-            {
-                throw new Exception("未配置Redis");
-            }
-            var redisOptions = ConfigurationOptions.Parse(redisConfig.Host); // host1:port1, host2:port2, ...
-            redisOptions.Password = redisConfig.Password;
-            var multiplexer = ConnectionMultiplexer.Connect(redisOptions);
-            builder.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
- 
+
             builder.Services.AddDbContext<BloggingContext>(options =>
             {
                 options.UseNpgsql(config.PgDsn);
@@ -51,20 +42,14 @@ namespace Gliese
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+                app.UseSwagger();
+                app.UseSwaggerUI();
 
-            //app.UseHttpsRedirection();
-            app.UseStaticFiles();
+            }
 
             app.UseRouting();
 
-            //app.UseAuthorization();
-
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+            app.MapControllers();
 
             app.Run();
         }

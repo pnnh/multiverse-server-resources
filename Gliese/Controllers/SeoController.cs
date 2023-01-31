@@ -7,7 +7,8 @@ using Gliese.Services;
 
 namespace Gliese.Controllers;
 
-public class SeoController : Controller
+[ApiController]
+public class SeoController : ControllerBase
 {
     private readonly ILogger<SeoController> logger;
     private readonly BloggingContext dataContext;

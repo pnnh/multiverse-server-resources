@@ -17,13 +17,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AWSSDK.AppConfig" Version="3.7.100.33" />
-      <PackageReference Include="AWSSDK.AppConfigData" Version="3.7.100.33" />
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
       <PackageReference Include="Markdig" Version="0.30.4" />
       <PackageReference Include="Microsoft.Extensions.Logging.Log4Net.AspNetCore" Version="6.1.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.0" />
-      <PackageReference Include="StackExchange.Redis" Version="2.6.86" />
       <PackageReference Include="xsitemap" Version="2.7.0" />
     </ItemGroup>
 

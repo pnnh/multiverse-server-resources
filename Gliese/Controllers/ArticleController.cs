@@ -1,61 +1,71 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Gliese.Models;
-using StackExchange.Redis;
 using System.Web;
 
 namespace Gliese.Controllers;
 
-public class ArticleController : Controller
+[ApiController]
+public class ArticleController : ControllerBase
 {
     private readonly ILogger<ArticleController> logger;
     private readonly BloggingContext dataContext;
-    private readonly IConnectionMultiplexer redis;
 
-    public ArticleController(ILogger<ArticleController> logger, BloggingContext configuration, IConnectionMultiplexer redis)
+    public ArticleController(ILogger<ArticleController> logger, BloggingContext configuration)
     {
         this.logger = logger;
         this.dataContext = configuration;
-        this.redis = redis;
     }
 
-    [Route("article/read/{pk}")]
-    public async Task<IActionResult> Read(string pk)
+    [Route("article/{pk}")]
+    public CommonResult Get(string pk)
     {
         var model = dataContext.Articles.FirstOrDefault(m => m.Pk == pk);
         if (model == null)
         {
-            return Content("404");
+            return new CommonResult { Code = 404, Message = "文章不存在" };
         }
-        await UpdateViews(pk);
 
-        var viewModel = model.ToViewModel(); 
-        return View(viewModel);
+        return new CommonResult { Code = 200, Data = model };
     }
 
-    private async Task UpdateViews(string pk)
+    [Route("article_viewer/update")]
+    public CommonResult ArticleViewerUpdate(string article, string client_ip)
     {
-        var clientIp = HttpUtils.GetClientAddress(HttpContext);
-        logger.LogInformation($"clientIp {clientIp}");
-        var redisKey = $"article:{pk}:viewer:{clientIp}";
-        var db = redis.GetDatabase();
-        var foo = await db.StringGetAsync(redisKey);
-        logger.LogInformation($"foo {foo}");
-        if (!foo.IsNull)
+        logger.LogDebug($"client_ip {client_ip}");
+        if (String.IsNullOrEmpty(client_ip) || String.IsNullOrEmpty(article))
         {
-            return;
+            return new CommonResult { Code = 400 };
         }
-
-        logger.LogDebug("未查看，更新浏览次数");
 
         using (var transaction = dataContext.Database.BeginTransaction())
         {
+            var viewer = dataContext.ArticleViewerTable.FirstOrDefault(m => m.Article == article && m.NetAddr == client_ip);
+            if (viewer != null)
+            {
+                if (viewer.UpdateTime.AddHours(24) > DateTime.UtcNow)
+                {
+                    logger.LogDebug($"24小时内更新过, 不再更新: ${client_ip}");
+                    return new CommonResult { Code = 200 };
+                }
+                else
+                {
+                    dataContext.Attach(viewer);
+                    viewer.UpdateTime = DateTime.UtcNow;
+                    dataContext.Entry(viewer).Property(p => p.UpdateTime).IsModified = true;
+                }
+            }
+            else
+            {
+                var model = new ArticleViewerTable { Article = article, NetAddr = client_ip, CreateTime = DateTime.UtcNow, UpdateTime = DateTime.UtcNow };
+                dataContext.ArticleViewerTable.Add(model);
+            }
 
-            var articleView = dataContext.ArticleViewTable.FirstOrDefault(m => m.Pk == pk);
+            var articleView = dataContext.ArticleExtendTable.FirstOrDefault(m => m.Pk == article);
             if (articleView == null)
             {
-                var model = new ArticleViewTable { Pk = pk, Views = 1 };
-                dataContext.ArticleViewTable.Add(model);
+                var model = new ArticleExtendTable { Pk = article, Views = 1 };
+                dataContext.ArticleExtendTable.Add(model);
             }
             else
             {
@@ -67,11 +77,10 @@ public class ArticleController : Controller
             dataContext.SaveChanges();
 
             transaction.Commit();
-        }
-        var readTime = DateTime.UtcNow.ToString();
-        var setOk = await db.StringSetAsync(redisKey, readTime, TimeSpan.FromHours(24));
-        logger.LogDebug($"setOk {setOk}");
+        } // using transaction
 
-        return;
+
+        return new CommonResult { Code = 200 };
     }
+
 }
