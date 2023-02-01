@@ -17,7 +17,7 @@ public class ArticleController : ControllerBase
         this.dataContext = configuration;
     }
 
-    [Route("article/{pk}")]
+    [Route("article/get")]
     public CommonResult Get(string pk)
     {
         var model = dataContext.Articles.FirstOrDefault(m => m.Pk == pk);
@@ -27,6 +27,19 @@ public class ArticleController : ControllerBase
         }
 
         return new CommonResult { Code = 200, Data = model };
+    }
+
+    [Route("article/select")]
+    public CommonResult Select()
+    {
+        var models = dataContext.Articles.Take(100).ToList();
+        if (models == null)
+        {
+            return new CommonResult { Code = 404, Message = "文章不存在" };
+        }
+
+
+        return new CommonResult { Code = 200, Data = models };
     }
 
     [Route("article_viewer/update")]

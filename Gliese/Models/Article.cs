@@ -19,38 +19,35 @@ namespace Gliese.Models
     {
         [Column("pk")]
         public string Pk { get; set; } = "";
+
         [Column("title")]
         public string Title { get; set; } = "";
+
+        [Column("header")]
+        public string Header { get; set; } = "";
+
         [Column("body")]
         public string Body { get; set; } = "";
+
         [Column("create_time")]
         public DateTime CreateTime { get; set; } = DateTime.MinValue;
+
         [Column("update_time")]
         public DateTime UpdateTime { get; set; } = DateTime.MinValue;
+
         [Column("creator")]
         public string Creator { get; set; } = "";
+
         [Column("keywords")]
         public string? Keywords { get; set; } = "";
+
         [Column("description")]
-        public string? Description { get; set; } = "";
-        [Column("mark_lang")]
-        public int MarkLang { get; set; } = 0;
+        public string? Description { get; set; } = ""; 
+
         [Column("status")]
-        public int Status { get; set; } = 0;
-        [Column("mark_text")]
-        public string? MarkText { get; set; } = "";
+        public int Status { get; set; } = 0; 
+        
         [Column("cover")]
         public string? Cover { get; set; } = "";
     }
-
-
-    public class ArticleReadViewModel
-    {
-        public ArticleTable Article = new ArticleTable();
-        public string[] KeywordsList = new string[0];
-
-        public string BodyHtml = "";
-    }
-
-
 }
