@@ -8,3 +8,4 @@ riderModule.iml
 Gliese/wwwroot/assets/
 Browser/debug/
 Docker/bin
+.vscode/

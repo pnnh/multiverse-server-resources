@@ -12,7 +12,7 @@ namespace Gliese
 {
     public class Gliese
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
 
             var builder = WebApplication.CreateBuilder(args);
@@ -29,7 +29,7 @@ namespace Gliese
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            var config = await AwsConfig.GetConfig();
+            var config = AwsConfig.GetConfig();
 
             builder.Services.AddDbContext<BloggingContext>(options =>
             {
