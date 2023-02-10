@@ -20,7 +20,7 @@ public class SeoController : ControllerBase
         dataContext = configuration;
     }
 
-    [Route("seo/sitemap")]
+    [Route("/restful/article/seo/sitemap")]
     public IActionResult Sitemap()
     { 
         var sitemap = new Sitemap();

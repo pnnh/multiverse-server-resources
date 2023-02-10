@@ -17,7 +17,7 @@ public class ArticleController : ControllerBase
         this.dataContext = configuration;
     }
 
-    [Route("article/get")]
+    [Route("/restful/article/get")]
     public CommonResult Get(string pk)
     {
         var model = dataContext.Articles.FirstOrDefault(m => m.Pk == pk);
@@ -29,20 +29,28 @@ public class ArticleController : ControllerBase
         return new CommonResult { Code = 200, Data = model };
     }
 
-    [Route("article/select")]
-    public CommonResult Select()
+    [Route("/restful/article/select")]
+    public CommonResult Select(int offset = 0, int limit = 10)
     {
-        var models = dataContext.Articles.Take(100).ToList();
+        var models = dataContext.Articles.Skip(offset).Take(limit).ToList();
         if (models == null)
         {
             return new CommonResult { Code = 404, Message = "文章不存在" };
         }
+        var totalCount = dataContext.Articles.Count();
 
-
-        return new CommonResult { Code = 200, Data = models };
+        return new CommonResult
+        {
+            Code = 200,
+            Data = new
+            {
+                list = models,
+                count = totalCount
+            }
+        };
     }
 
-    [Route("article_viewer/update")]
+    [Route("/restful/article/viewer/update")]
     public CommonResult ArticleViewerUpdate(string article, string client_ip)
     {
         logger.LogDebug($"client_ip {client_ip}");
