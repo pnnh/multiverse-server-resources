@@ -7,17 +7,20 @@
 
 ```shell
 # 服务端构建
-dotnet publish -c Release --output ./Docker/bin Gliese.sln
+dotnet publish -c Release Gliese.sln
 ```
 
-### 构建Docker镜像
+## 构建docker镜像
 
 ```bash
-# 构建docker镜像
-cd Docker
-sudo docker build -f Dockerfile -t polaris-www-server:latest .
-# 测试执行构建的镜像
-sudo docker run -p 8082:8082 polaris-www-server
-# 仅在本地测试时使用，将aws凭证文件挂载到docker容器
-sudo docker run -p 8082:8082 -v $HOME/.aws/credentials:/root/.aws/credentials:ro polaris-www-server
+sudo docker build -t polaris-cloud-server .
+
+# 本地测试运行容器
+sudo docker run --env-file=debug/.env -p 8101:8101 polaris-cloud-server
+
+# 镜像打标签
+sudo docker tag polaris-cloud-server:latest elarry/polaris-cloud-server:v0.1.0
+
+# 推送镜像（需要先登录）
+sudo docker push elarry/polaris-cloud-server:v0.1.0
 ```

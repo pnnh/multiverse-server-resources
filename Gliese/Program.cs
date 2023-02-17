@@ -15,7 +15,8 @@ namespace Gliese
         public static void Main(string[] args)
         {
 
-            var builder = WebApplication.CreateBuilder(args);
+            var builder = WebApplication.CreateBuilder(args); 
+            builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
             builder.Logging.ClearProviders().AddSimpleConsole(options =>
             {
@@ -37,15 +38,13 @@ namespace Gliese
             });
 
             var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
+ 
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
                 app.UseSwagger();
                 app.UseSwaggerUI();
-
-            }
+            } 
 
             app.UseRouting();
 

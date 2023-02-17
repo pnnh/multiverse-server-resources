@@ -9,3 +9,5 @@ Gliese/wwwroot/assets/
 Browser/debug/
 Docker/bin
 .vscode/
+build/
+debug/
