@@ -9,7 +9,14 @@ namespace Gliese.Services
     public class PolarisConfig
     {
         public static string SelfUrl = "https://www.polaris.direct";
+        static PolarisConfig()
+        {
+#if DEBUG
+            SelfUrl = "https://debug.polaris.direct";
+#endif
+        }
     }
+
 
     public class ConfigModel
     {
@@ -20,18 +27,10 @@ namespace Gliese.Services
     {
         static AwsConfig()
         {
-            //ParseAppConfig();
         }
 
         static Dictionary<string, string> LoadConfigFromAws(string fileName, string envName)
         {
-            // const string configUrl = "http://127.0.0.1:8001/config/select?project=polaris"; 
-            // using var client = new HttpClient();
-
-            // var response = await client.GetAsync(configUrl); 
-            // var result = await response.Content.ReadAsStringAsync();
-
-            // return result;
             var dict = new Dictionary<string, string>();
             foreach (DictionaryEntry item in Environment.GetEnvironmentVariables())
             {
