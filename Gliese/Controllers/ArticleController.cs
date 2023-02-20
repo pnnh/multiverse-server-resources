@@ -18,28 +18,28 @@ public class ArticleController : ControllerBase
     }
 
     [Route("/server/article/get")]
-    public CommonResult Get(string pk)
+    public CommonResult<object> Get(string pk)
     {
         var model = dataContext.Articles.FirstOrDefault(m => m.Pk == pk);
         if (model == null)
         {
-            return new CommonResult { Code = 404, Message = "文章不存在" };
+            return new CommonResult<object> { Code = 404, Message = "文章不存在" };
         }
 
-        return new CommonResult { Code = 200, Data = model };
+        return new CommonResult<object> { Code = 200, Data = model };
     }
 
     [Route("/server/article/select")]
-    public CommonResult Select(int offset = 0, int limit = 10)
+    public CommonResult<object> Select(int offset = 0, int limit = 10)
     {
         var models = dataContext.Articles.Skip(offset).Take(limit).ToList();
         if (models == null)
         {
-            return new CommonResult { Code = 404, Message = "文章不存在" };
+            return new CommonResult<object> { Code = 404, Message = "文章不存在" };
         }
         var totalCount = dataContext.Articles.Count();
 
-        return new CommonResult
+        return new CommonResult<object>
         {
             Code = 200,
             Data = new
@@ -51,12 +51,12 @@ public class ArticleController : ControllerBase
     }
 
     [Route("/server/article/viewer/update")]
-    public CommonResult ArticleViewerUpdate(string article, string client_ip)
+    public CommonResult<object> ArticleViewerUpdate(string article, string client_ip)
     {
         logger.LogDebug($"client_ip {client_ip}");
         if (String.IsNullOrEmpty(client_ip) || String.IsNullOrEmpty(article))
         {
-            return new CommonResult { Code = 400 };
+            return new CommonResult<object> { Code = 400 };
         }
 
         using (var transaction = dataContext.Database.BeginTransaction())
@@ -67,7 +67,7 @@ public class ArticleController : ControllerBase
                 if (viewer.UpdateTime.AddHours(24) > DateTime.UtcNow)
                 {
                     logger.LogDebug($"24小时内更新过, 不再更新: ${client_ip}");
-                    return new CommonResult { Code = 200 };
+                    return new CommonResult<object> { Code = 200 };
                 }
                 else
                 {
@@ -101,7 +101,7 @@ public class ArticleController : ControllerBase
         } // using transaction
 
 
-        return new CommonResult { Code = 200 };
+        return new CommonResult<object> { Code = 200 };
     }
 
 }

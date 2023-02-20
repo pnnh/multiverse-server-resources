@@ -16,9 +16,9 @@ public class HomeController : ControllerBase
     }
 
     [Route("/server/article")]
-    public CommonResult Index(int page = 1)
+    public CommonResult<object> Index(int page = 1)
     {
-        return new CommonResult { Code = 200, Message = "Polaris业务接口服务" };
+        return new CommonResult<object> { Code = 200, Message = "Polaris业务接口服务" };
     }
 
 }
