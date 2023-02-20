@@ -4,7 +4,7 @@ using Gliese.Models;
 
 namespace Gliese.Controllers;
 
-[ApiController] 
+[ApiController]
 public class HomeController : ControllerBase
 {
     private readonly ILogger<HomeController> logger;
@@ -15,7 +15,7 @@ public class HomeController : ControllerBase
         this.logger = logger;
     }
 
-    [Route("/restful/article")]
+    [Route("/server/article")]
     public CommonResult Index(int page = 1)
     {
         return new CommonResult { Code = 200, Message = "Polaris业务接口服务" };

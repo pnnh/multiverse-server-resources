@@ -20,11 +20,11 @@ public class SeoController : ControllerBase
         dataContext = configuration;
     }
 
-    [Route("/restful/article/seo/sitemap")]
+    [Route("/server/article/seo/sitemap")]
     public IActionResult Sitemap()
-    { 
+    {
         var sitemap = new Sitemap();
- 
+
         sitemap.Add(new Url
         {
             ChangeFrequency = ChangeFrequency.Daily,
@@ -35,7 +35,7 @@ public class SeoController : ControllerBase
 
         var fBlogs = dataContext.Articles.Where(b => b.Title != "").ToList();
         foreach (var a in fBlogs)
-        { 
+        {
             var readUrl = PolarisConfig.SelfUrl + $"/article/read/{a.Pk}";
             var item = new Url
             {
