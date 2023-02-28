@@ -9,7 +9,7 @@ namespace Gliese.Utils;
 
 public class JwtHelper
 {
-    public static string GenerateToken(string username, int expireMinutes = 20)
+    public static string GenerateToken(string username, int expireMinutes = 60)
     {
         var secretKey = PolarisConfig.GetConfig("JWT_SECRET");
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));

@@ -133,7 +133,7 @@ public class SessionController : Controller
         _fido2Storage.UpdateCounter(res.CredentialId, res.Counter);
 
         var token = JwtHelper.GenerateToken("fakeUserId");
-        HttpContext.Response.Cookies.Append("session", token, new CookieOptions
+        HttpContext.Response.Cookies.Append("Authorization", $"Bearer {token}", new CookieOptions
         {
             Expires = DateTimeOffset.Now.AddMinutes(30),
             HttpOnly = true,
@@ -195,23 +195,17 @@ public class SessionController : Controller
         };
     }
 
-    [Route("/session/logined")]
-    public CommonResult<object> Logined()
+    [Route("/session/introspection")]
+    public CommonResult<object> Introspection(string token = "")
     {
-        var openid = Request.Cookies["openid"];
-        logger.LogDebug($"openid {openid}");
-        if (string.IsNullOrEmpty(openid))
+        if (string.IsNullOrEmpty(token))
         {
-            return new CommonResult<object> { Code = 401, Message = "未登录" };
+            return new CommonResult<object> { Code = 401, Message = "无效token" };
         }
-        var dbUser = dataContext.Users.FirstOrDefault(m => m.Username == openid);
-        if (dbUser == null)
-        {
-            return new CommonResult<object> { Code = 401, Message = "未登录" };
-        }
-        var parameters = new Dictionary<string, string>();
-        parameters.Add("nickname", dbUser.Nickname ?? "未知用户");
-
-        return new CommonResult<object> { Code = 200, Data = parameters };
+        var claims = JwtHelper.ValidateToken(token);
+        var abc = claims?.Claims.FirstOrDefault();
+        return new CommonResult<object> { Code = 200, Data = new {
+            Username = abc?.Value,
+        } };
     }
 }
