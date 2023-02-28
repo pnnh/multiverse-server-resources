@@ -11,7 +11,7 @@ using Gliese.Models;
 using Gliese.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.IdentityModel.Tokens;
 using static Fido2NetLib.Fido2;
 
 namespace Gliese.Controllers;
@@ -49,9 +49,9 @@ public class AccountController : Controller
         try
         {
 
-            if (string.IsNullOrEmpty(username))
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(username.Trim()))
             {
-                username = $"{displayName} (Usernameless user created at {DateTime.UtcNow})";
+                return Json(new CredentialMakeResult(status: "error", errorMessage: "Username is required", result: null));
             }
 
             // 1. Get user from DB by username (in our example, auto create missing users)
@@ -59,7 +59,7 @@ public class AccountController : Controller
             {
                 DisplayName = displayName,
                 Name = username,
-                Id = Encoding.UTF8.GetBytes(username) // byte representation of userID is required
+                Id = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()),  // Encoding.UTF8.GetBytes(username) // byte representation of userID is required
             });
 
             // 2. Get user existing keys by username
@@ -84,7 +84,25 @@ public class AccountController : Controller
             var options = _fido2.RequestNewCredential(user, existingKeys, authenticatorSelection, attType.ToEnum<AttestationConveyancePreference>(), exts);
 
             // 4. Temporarily store options, session/in-memory cache/redis/db
-            HttpContext.Session.SetString("fido2.attestationOptions", options.ToJson());
+            //HttpContext.Session.SetString("fido2.attestationOptions", options.ToJson());
+            var session = new SessionTable
+            {
+                Pk = Guid.NewGuid().ToString(),
+                Content = options.ToJson(),
+                User = System.Text.Encoding.UTF8.GetString(user.Id),
+                CreateTime = DateTime.UtcNow,
+                UpdateTime = DateTime.UtcNow,
+                Type = "fido2.attestationOptions",
+            };
+            dataContext.Sessions.Add(session);
+            dataContext.SaveChanges();
+            HttpContext.Response.Cookies.Append("attestationOptions", session.Pk, new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddMinutes(30),
+                HttpOnly = true,
+                SameSite = SameSiteMode.Strict,
+                Secure = true
+            });
 
             // 5. return options to client
             return Json(options);
@@ -101,9 +119,16 @@ public class AccountController : Controller
     {
         try
         {
+            var sessionPk = Request.Cookies["attestationOptions"];
+            logger.LogDebug($"sessionPk {sessionPk}");
+            var session = dataContext.Sessions.FirstOrDefault(s => s.Pk == sessionPk);
+            if (session == null)
+            {
+                return Json(new CredentialMakeResult(status: "error", errorMessage: "Registration failed", result: null));
+            }
             // 1. get the options we sent the client
-            var jsonOptions = HttpContext.Session.GetString("fido2.attestationOptions");
-            var options = CredentialCreateOptions.FromJson(jsonOptions);
+            //var jsonOptions = HttpContext.Session.GetString("fido2.attestationOptions");
+            var options = CredentialCreateOptions.FromJson(session.Content);
 
             // 2. Create callback so that lib can verify credential id is unique to this user
             IsCredentialIdUniqueToUserAsyncDelegate callback = async (args, cancellationToken) =>

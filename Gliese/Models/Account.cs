@@ -55,7 +55,7 @@ public class AccountTable
     public static AccountTable FromFido2User(Fido2User user)
     {
         var table = new AccountTable();
-        table.Pk = Guid.NewGuid().ToString();
+        table.Pk =  System.Text.Encoding.UTF8.GetString(user.Id);//Guid.NewGuid().ToString();
         table.Nickname = user.DisplayName;
         table.Account = user.Name; 
         table.CreateTime = DateTime.UtcNow;

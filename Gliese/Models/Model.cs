@@ -13,6 +13,7 @@ public class BloggingContext : DbContext
     public DbSet<UserTable> Users => Set<UserTable>();
     public DbSet<AccountTable> Accounts => Set<AccountTable>();
     public DbSet<CredentialTable> Credentials => Set<CredentialTable>();
+    public DbSet<SessionTable> Sessions => Set<SessionTable>();
 
     public BloggingContext(DbContextOptions<BloggingContext> options) : base(options)
     {

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Gliese.Services;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using Microsoft.AspNetCore.CookiePolicy;
 
 namespace Gliese
 {
@@ -41,11 +42,10 @@ namespace Gliese
 
             services.AddMemoryCache();
             services.AddDistributedMemoryCache();
-            services.AddSession(options =>
-            { 
-                options.IdleTimeout = TimeSpan.FromMinutes(2);
-                options.Cookie.HttpOnly = true; 
-                options.Cookie.SameSite = SameSiteMode.Strict;
+            services.AddCookiePolicy(options =>
+            {  
+                options.HttpOnly = HttpOnlyPolicy.Always;
+                options.MinimumSameSitePolicy = SameSiteMode.Strict;
             });
 
 
@@ -73,8 +73,7 @@ namespace Gliese
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
-            app.UseSession();
+ 
             app.UseRouting();
             app.UseStaticFiles();
 

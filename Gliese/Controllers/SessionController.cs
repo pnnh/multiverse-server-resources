@@ -23,7 +23,7 @@ public class SessionController : Controller
     private IFido2 _fido2;
     public static IMetadataService? _mds;
     //public static readonly DevelopmentInMemoryStore DemoStorage = new DevelopmentInMemoryStore();
-    
+
     public SessionController(ILogger<OAuth2Controller> logger, IFido2 fido2, BloggingContext configuration)
     {
         this.logger = logger;
@@ -44,11 +44,12 @@ public class SessionController : Controller
         try
         {
             var existingCredentials = new List<PublicKeyCredentialDescriptor>();
+            Fido2User? user = null;
 
             if (!string.IsNullOrEmpty(username))
             {
                 // 1. Get user from DB
-                var user = _fido2Storage.GetUser(username) ?? throw new ArgumentException("Username was not registered");
+                user = _fido2Storage.GetUser(username) ?? throw new ArgumentException("Username was not registered");
 
                 // 2. Get registered credentials from database
                 existingCredentials = _fido2Storage.GetCredentialsByUser(user).Select(c => c.Descriptor).ToList();
@@ -68,7 +69,25 @@ public class SessionController : Controller
             );
 
             // 4. Temporarily store options, session/in-memory cache/redis/db
-            HttpContext.Session.SetString("fido2.assertionOptions", options.ToJson());
+            //HttpContext.Session.SetString("fido2.assertionOptions", options.ToJson());
+            var session = new SessionTable
+            {
+                Pk = Guid.NewGuid().ToString(),
+                Content = options.ToJson(),
+                //User = System.Text.Encoding.UTF8.GetString(user.Id),
+                CreateTime = DateTime.UtcNow,
+                UpdateTime = DateTime.UtcNow,
+                Type = "fido2.assertionOptions",
+            };
+            dataContext.Sessions.Add(session);
+            dataContext.SaveChanges();
+            HttpContext.Response.Cookies.Append("assertionOptions", session.Pk, new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddMinutes(30),
+                HttpOnly = true,
+                SameSite = SameSiteMode.Strict,
+                Secure = true
+            });
 
             // 5. Return options to client
             return Json(options);
@@ -84,8 +103,20 @@ public class SessionController : Controller
     [Route("/session/makeAssertion")]
     public async Task<CommonResult<AccountMakeAssertion>> MakeAssertion([FromBody] AuthenticatorAssertionRawResponse clientResponse, CancellationToken cancellationToken)
     {
-        var jsonOptions = HttpContext.Session.GetString("fido2.assertionOptions");
-        var options = AssertionOptions.FromJson(jsonOptions);
+
+        var sessionPk = Request.Cookies["assertionOptions"];
+        logger.LogDebug($"sessionPk {sessionPk}");
+        var session = dataContext.Sessions.FirstOrDefault(s => s.Pk == sessionPk);
+        if (session == null)
+        {
+            return new CommonResult<AccountMakeAssertion>
+            {
+                Code = 200,
+                Message = "Session is empty"
+            };
+        }
+        //var jsonOptions = HttpContext.Session.GetString("fido2.assertionOptions");
+        var options = AssertionOptions.FromJson(session.Content);
 
         var creds = _fido2Storage.GetCredentialById(clientResponse.Id) ?? throw new Exception("Unknown credentials");
 
@@ -102,14 +133,21 @@ public class SessionController : Controller
         _fido2Storage.UpdateCounter(res.CredentialId, res.Counter);
 
         var token = JwtHelper.GenerateToken("fakeUserId");
+        HttpContext.Response.Cookies.Append("session", token, new CookieOptions
+        {
+            Expires = DateTimeOffset.Now.AddMinutes(30),
+            HttpOnly = true,
+            SameSite = SameSiteMode.Strict,
+            Secure = true
+        });
 
         return new CommonResult<AccountMakeAssertion>
         {
             Code = 200,
-            Data = new AccountMakeAssertion
-            {
-                Token = token
-            }
+            // Data = new AccountMakeAssertion
+            // {
+            //     Token = token
+            // }
         };
     }
 
