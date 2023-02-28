@@ -30,7 +30,7 @@ public class SeoController : ControllerBase
             ChangeFrequency = ChangeFrequency.Daily,
             Location = PolarisConfig.SelfUrl,
             Priority = 0.5,
-            TimeStamp = DateTime.Now
+            TimeStamp = DateTime.UtcNow
         });
 
         var fBlogs = dataContext.Articles.Where(b => b.Title != "").ToList();

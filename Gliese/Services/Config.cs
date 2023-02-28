@@ -8,28 +8,18 @@ namespace Gliese.Services
 {
     public class PolarisConfig
     {
+        private static Dictionary<string, string> configContent = new Dictionary<string, string>();
         public static string SelfUrl = "https://www.polaris.direct";
+
         static PolarisConfig()
         {
 #if DEBUG
             SelfUrl = "https://debug.polaris.direct";
 #endif
+            configContent = LoadConfigFromEnv();
         }
-    }
-
-
-    public class ConfigModel
-    {
-        public string PgDsn { get; set; } = "";
-    }
-
-    public class AwsConfig
-    {
-        static AwsConfig()
-        {
-        }
-
-        static Dictionary<string, string> LoadConfigFromAws(string fileName, string envName)
+ 
+        static Dictionary<string, string> LoadConfigFromEnv()
         {
             var dict = new Dictionary<string, string>();
             foreach (DictionaryEntry item in Environment.GetEnvironmentVariables())
@@ -45,20 +35,9 @@ namespace Gliese.Services
             return dict;
         }
 
-        public static ConfigModel GetConfig()
-        {
-            var configModel = new ConfigModel();
-            var configContent = LoadConfigFromAws("main.config", "default");
-            foreach (var e in configContent)
-            {
-                switch (e.Key)
-                {
-                    case "CSHARP_DSN":
-                        configModel.PgDsn = e.Value;
-                        break;
-                }
-            }
-            return configModel;
+        public static string GetConfig(string configKey)
+        {  
+            return configContent[configKey]; 
         }
     }
 }

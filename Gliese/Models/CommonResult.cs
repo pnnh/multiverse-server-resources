@@ -8,4 +8,11 @@ namespace Gliese.Models
         public string? Message { get; set; } = "";
         public T? Data { get; set; } = default(T);
     }
+
+    public class Codes {
+        public const int Success = 200;
+        public const int Error = 500;
+        public const int NotFound = 404;
+        public const int BadRequest = 400;
+    }
 }

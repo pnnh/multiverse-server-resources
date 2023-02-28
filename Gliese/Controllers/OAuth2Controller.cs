@@ -100,23 +100,4 @@ public class OAuth2Controller : ControllerBase
         return Redirect("https://debug.polaris.direct");
     }
 
-    [Route("/account/logined")]
-    public CommonResult<object> Logined()
-    {
-        var openid = Request.Cookies["openid"];
-        logger.LogDebug($"openid {openid}");
-        if (string.IsNullOrEmpty(openid))
-        {
-            return new CommonResult<object> { Code = 401, Message = "未登录" };
-        }
-        var dbUser = dataContext.Users.FirstOrDefault(m => m.Username == openid);
-        if (dbUser == null)
-        {
-            return new CommonResult<object> { Code = 401, Message = "未登录" };
-        }
-        var parameters = new Dictionary<string, string>();
-        parameters.Add("nickname", dbUser.Nickname ?? "未知用户");
-
-        return new CommonResult<object> { Code = 200, Data = parameters };
-    }
 }

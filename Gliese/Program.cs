@@ -32,23 +32,19 @@ namespace Gliese
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            var config = AwsConfig.GetConfig();
+            var pgDsn = PolarisConfig.GetConfig("CSHARP_DSN");
 
             builder.Services.AddDbContext<BloggingContext>(options =>
             {
-                options.UseNpgsql(config.PgDsn);
+                options.UseNpgsql(pgDsn);
             });
 
             services.AddMemoryCache();
             services.AddDistributedMemoryCache();
             services.AddSession(options =>
-            {
-                // Set a short timeout for easy testing.
+            { 
                 options.IdleTimeout = TimeSpan.FromMinutes(2);
-                options.Cookie.HttpOnly = true;
-                // Strict SameSite mode is required because the default mode used
-                // by ASP.NET Core 3 isn't understood by the Conformance Tool
-                // and breaks conformance testing
+                options.Cookie.HttpOnly = true; 
                 options.Cookie.SameSite = SameSiteMode.Strict;
             });
 

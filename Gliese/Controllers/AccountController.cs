@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Fido2NetLib;
 using Fido2NetLib.Development;
 using Fido2NetLib.Objects;
+using Gliese.Models;
+using Gliese.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,13 +17,19 @@ using static Fido2NetLib.Fido2;
 namespace Gliese.Controllers;
 public class AccountController : Controller
 {
+    private readonly ILogger<OAuth2Controller> logger;
+    private readonly BloggingContext dataContext;
+    private readonly Fido2Storage _fido2Storage;
     private IFido2 _fido2;
     public static IMetadataService? _mds;
-    public static readonly DevelopmentInMemoryStore DemoStorage = new DevelopmentInMemoryStore();
+    //public static readonly DevelopmentInMemoryStore DemoStorage = new DevelopmentInMemoryStore();
 
-    public AccountController(IFido2 fido2)
+    public AccountController(ILogger<OAuth2Controller> logger, IFido2 fido2, BloggingContext configuration)
     {
+        this.logger = logger;
         _fido2 = fido2;
+        this.dataContext = configuration;
+        _fido2Storage = new Fido2Storage(configuration);
     }
 
     private string FormatException(Exception e)
@@ -30,7 +38,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    [Route("/makeCredentialOptions")]
+    [Route("/account/makeCredentialOptions")]
     public JsonResult MakeCredentialOptions([FromForm] string username,
                                             [FromForm] string displayName,
                                             [FromForm] string attType,
@@ -47,7 +55,7 @@ public class AccountController : Controller
             }
 
             // 1. Get user from DB by username (in our example, auto create missing users)
-            var user = DemoStorage.GetOrAddUser(username, () => new Fido2User
+            var user = _fido2Storage.GetOrAddUser(username, () => new Fido2User
             {
                 DisplayName = displayName,
                 Name = username,
@@ -55,7 +63,7 @@ public class AccountController : Controller
             });
 
             // 2. Get user existing keys by username
-            var existingKeys = DemoStorage.GetCredentialsByUser(user).Select(c => c.Descriptor).ToList();
+            var existingKeys = _fido2Storage.GetCredentialsByUser(user).Select(c => c.Descriptor).ToList();
 
             // 3. Create options
             var authenticatorSelection = new AuthenticatorSelection
@@ -88,7 +96,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    [Route("/makeCredential")]
+    [Route("/account/makeCredential")]
     public async Task<JsonResult> MakeCredential([FromBody] AuthenticatorAttestationRawResponse attestationResponse, CancellationToken cancellationToken)
     {
         try
@@ -98,9 +106,9 @@ public class AccountController : Controller
             var options = CredentialCreateOptions.FromJson(jsonOptions);
 
             // 2. Create callback so that lib can verify credential id is unique to this user
-            IsCredentialIdUniqueToUserAsyncDelegate callback = static async (args, cancellationToken) =>
+            IsCredentialIdUniqueToUserAsyncDelegate callback = async (args, cancellationToken) =>
             {
-                var users = await DemoStorage.GetUsersByCredentialIdAsync(args.CredentialId, cancellationToken);
+                var users = await _fido2Storage.GetUsersByCredentialIdAsync(args.CredentialId, cancellationToken);
                 if (users.Count > 0)
                     return false;
 
@@ -114,14 +122,14 @@ public class AccountController : Controller
                 return Json(new CredentialMakeResult(status: "error", errorMessage: "Registration failed", result: null));
 
             // 3. Store the credentials in db
-            DemoStorage.AddCredentialToUser(options.User, new StoredCredential
+            _fido2Storage.AddCredentialToUser(options.User, new StoredCredential
             {
                 Descriptor = new PublicKeyCredentialDescriptor(success.Result.CredentialId),
                 PublicKey = success.Result.PublicKey,
                 UserHandle = success.Result.User.Id,
                 SignatureCounter = success.Result.Counter,
                 CredType = success.Result.CredType,
-                RegDate = DateTime.Now,
+                RegDate = DateTime.UtcNow,
                 AaGuid = success.Result.Aaguid
             });
 
@@ -131,87 +139,6 @@ public class AccountController : Controller
         catch (Exception e)
         {
             return Json(new CredentialMakeResult(status: "error", errorMessage: FormatException(e), result: null));
-        }
-    }
-
-    [HttpPost]
-    [Route("/assertionOptions")]
-    public ActionResult AssertionOptionsPost([FromForm] string username, [FromForm] string userVerification)
-    {
-        try
-        {
-            var existingCredentials = new List<PublicKeyCredentialDescriptor>();
-
-            if (!string.IsNullOrEmpty(username))
-            {
-                // 1. Get user from DB
-                var user = DemoStorage.GetUser(username) ?? throw new ArgumentException("Username was not registered");
-
-                // 2. Get registered credentials from database
-                existingCredentials = DemoStorage.GetCredentialsByUser(user).Select(c => c.Descriptor).ToList();
-            }
-
-            var exts = new AuthenticationExtensionsClientInputs()
-            {
-                UserVerificationMethod = true
-            };
-
-            // 3. Create options
-            var uv = string.IsNullOrEmpty(userVerification) ? UserVerificationRequirement.Discouraged : userVerification.ToEnum<UserVerificationRequirement>();
-            var options = _fido2.GetAssertionOptions(
-                existingCredentials,
-                uv,
-                exts
-            );
-
-            // 4. Temporarily store options, session/in-memory cache/redis/db
-            HttpContext.Session.SetString("fido2.assertionOptions", options.ToJson());
-
-            // 5. Return options to client
-            return Json(options);
-        }
-
-        catch (Exception e)
-        {
-            return Json(new AssertionOptions { Status = "error", ErrorMessage = FormatException(e) });
-        }
-    }
-
-    [HttpPost]
-    [Route("/makeAssertion")]
-    public async Task<JsonResult> MakeAssertion([FromBody] AuthenticatorAssertionRawResponse clientResponse, CancellationToken cancellationToken)
-    {
-        try
-        {
-            // 1. Get the assertion options we sent the client
-            var jsonOptions = HttpContext.Session.GetString("fido2.assertionOptions");
-            var options = AssertionOptions.FromJson(jsonOptions);
-
-            // 2. Get registered credential from database
-            var creds = DemoStorage.GetCredentialById(clientResponse.Id) ?? throw new Exception("Unknown credentials");
-
-            // 3. Get credential counter from database
-            var storedCounter = creds.SignatureCounter;
-
-            // 4. Create callback to check if userhandle owns the credentialId
-            IsUserHandleOwnerOfCredentialIdAsync callback = static async (args, cancellationToken) =>
-            {
-                var storedCreds = await DemoStorage.GetCredentialsByUserHandleAsync(args.UserHandle, cancellationToken);
-                return storedCreds.Exists(c => c.Descriptor.Id.SequenceEqual(args.CredentialId));
-            };
-
-            // 5. Make the assertion
-            var res = await _fido2.MakeAssertionAsync(clientResponse, options, creds.PublicKey, storedCounter, callback, cancellationToken: cancellationToken);
-
-            // 6. Store the updated counter
-            DemoStorage.UpdateCounter(res.CredentialId, res.Counter);
-
-            // 7. return OK to client
-            return Json(res);
-        }
-        catch (Exception e)
-        {
-            return Json(new AssertionVerificationResult { Status = "error", ErrorMessage = FormatException(e) });
         }
     }
 }
