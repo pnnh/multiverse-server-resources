@@ -15,7 +15,7 @@ public class HomeController : ControllerBase
         this.logger = logger;
     }
 
-    [Route("/server/article")]
+    [Route("/")]
     public CommonResult<object> Index(int page = 1)
     {
         return new CommonResult<object> { Code = 200, Message = "Polaris业务接口服务" };

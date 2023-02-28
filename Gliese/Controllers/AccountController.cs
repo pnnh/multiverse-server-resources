@@ -30,7 +30,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    [Route("/server/makeCredentialOptions")]
+    [Route("/makeCredentialOptions")]
     public JsonResult MakeCredentialOptions([FromForm] string username,
                                             [FromForm] string displayName,
                                             [FromForm] string attType,
@@ -88,7 +88,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    [Route("/server/makeCredential")]
+    [Route("/makeCredential")]
     public async Task<JsonResult> MakeCredential([FromBody] AuthenticatorAttestationRawResponse attestationResponse, CancellationToken cancellationToken)
     {
         try
@@ -135,7 +135,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    [Route("/server/assertionOptions")]
+    [Route("/assertionOptions")]
     public ActionResult AssertionOptionsPost([FromForm] string username, [FromForm] string userVerification)
     {
         try
@@ -178,7 +178,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    [Route("/server/makeAssertion")]
+    [Route("/makeAssertion")]
     public async Task<JsonResult> MakeAssertion([FromBody] AuthenticatorAssertionRawResponse clientResponse, CancellationToken cancellationToken)
     {
         try

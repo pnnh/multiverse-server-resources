@@ -21,7 +21,7 @@ public class OAuth2Controller : ControllerBase
         this.dataContext = configuration;
     }
 
-    [Route("/server/oauth2/code")]
+    [Route("/oauth2/code")]
     public async Task<IActionResult> ExchangeToken(string code = "")
     {
         var query = Request.QueryString;
@@ -100,7 +100,7 @@ public class OAuth2Controller : ControllerBase
         return Redirect("https://debug.polaris.direct");
     }
 
-    [Route("/server/account/logined")]
+    [Route("/account/logined")]
     public CommonResult<object> Logined()
     {
         var openid = Request.Cookies["openid"];

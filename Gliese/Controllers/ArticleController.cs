@@ -17,7 +17,7 @@ public class ArticleController : ControllerBase
         this.dataContext = configuration;
     }
 
-    [Route("/server/article/get")]
+    [Route("/article/get")]
     public CommonResult<object> Get(string pk)
     {
         var model = dataContext.Articles.FirstOrDefault(m => m.Pk == pk);
@@ -29,7 +29,7 @@ public class ArticleController : ControllerBase
         return new CommonResult<object> { Code = 200, Data = model };
     }
 
-    [Route("/server/article/select")]
+    [Route("/article/select")]
     public CommonResult<object> Select(int offset = 0, int limit = 10)
     {
         var models = dataContext.Articles.Skip(offset).Take(limit).ToList();
@@ -50,7 +50,7 @@ public class ArticleController : ControllerBase
         };
     }
 
-    [Route("/server/article/viewer/update")]
+    [Route("/article/viewer/update")]
     public CommonResult<object> ArticleViewerUpdate(string article, string client_ip)
     {
         logger.LogDebug($"client_ip {client_ip}");
