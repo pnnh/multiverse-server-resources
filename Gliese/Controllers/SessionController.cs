@@ -39,75 +39,94 @@ public class SessionController : Controller
 
     [HttpPost]
     [Route("/session/assertionOptions")]
-    public ActionResult AssertionOptionsPost([FromForm] string username, [FromForm] string userVerification)
+    public CommonResult<object> AssertionOptionsPost([FromForm] string username, [FromForm] string userVerification)
     {
-        try
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(username.Trim()))
         {
-            var existingCredentials = new List<PublicKeyCredentialDescriptor>();
-            Fido2User? user = null;
-
-            if (!string.IsNullOrEmpty(username))
+            //return Json(new CredentialMakeResult(status: "error", errorMessage: "Username is required", result: null));
+            return new CommonResult<object>
             {
-                // 1. Get user from DB
-                user = _fido2Storage.GetUser(username) ?? throw new ArgumentException("Username was not registered");
+                Code = 400,
+                Message = "Username is required",
+                Data = null
+            };
+        }
+        var existingCredentials = new List<PublicKeyCredentialDescriptor>();
 
-                // 2. Get registered credentials from database
-                existingCredentials = _fido2Storage.GetCredentialsByUser(user).Select(c => c.Descriptor).ToList();
+
+        Fido2User? user = null;
+
+        // 1. Get user from DB
+        user = _fido2Storage.GetUser(username);
+        if (user == null)
+        {
+            return new CommonResult<object>
+            {
+                Code = 400,
+                Message = "Username is not registered",
+                Data = null
+            };
+        }
+
+        // 2. Get registered credentials from database
+        existingCredentials = _fido2Storage.GetCredentialsByUser(user).Select(c => c.Descriptor).ToList();
+
+
+        var exts = new AuthenticationExtensionsClientInputs()
+        {
+            UserVerificationMethod = true
+        };
+
+        // 3. Create options
+        var uv = string.IsNullOrEmpty(userVerification) ? UserVerificationRequirement.Discouraged : userVerification.ToEnum<UserVerificationRequirement>();
+        var options = _fido2.GetAssertionOptions(
+            existingCredentials,
+            uv,
+            exts
+        );
+
+        // 4. Temporarily store options, session/in-memory cache/redis/db
+        //HttpContext.Session.SetString("fido2.assertionOptions", options.ToJson());
+        var session = new SessionTable
+        {
+            Pk = Guid.NewGuid().ToString(),
+            Content = options.ToJson(),
+            //User = System.Text.Encoding.UTF8.GetString(user.Id),
+            CreateTime = DateTime.UtcNow,
+            UpdateTime = DateTime.UtcNow,
+            Type = "fido2.assertionOptions",
+        };
+        dataContext.Sessions.Add(session);
+        dataContext.SaveChanges();
+
+        // 5. Return options to client
+        //return Json(options); 
+        return new CommonResult<object>
+        {
+            Code = 200,
+            Data = new {
+                session = session.Pk,
+                options = options,
             }
-
-            var exts = new AuthenticationExtensionsClientInputs()
-            {
-                UserVerificationMethod = true
-            };
-
-            // 3. Create options
-            var uv = string.IsNullOrEmpty(userVerification) ? UserVerificationRequirement.Discouraged : userVerification.ToEnum<UserVerificationRequirement>();
-            var options = _fido2.GetAssertionOptions(
-                existingCredentials,
-                uv,
-                exts
-            );
-
-            // 4. Temporarily store options, session/in-memory cache/redis/db
-            //HttpContext.Session.SetString("fido2.assertionOptions", options.ToJson());
-            var session = new SessionTable
-            {
-                Pk = Guid.NewGuid().ToString(),
-                Content = options.ToJson(),
-                //User = System.Text.Encoding.UTF8.GetString(user.Id),
-                CreateTime = DateTime.UtcNow,
-                UpdateTime = DateTime.UtcNow,
-                Type = "fido2.assertionOptions",
-            };
-            dataContext.Sessions.Add(session);
-            dataContext.SaveChanges();
-            HttpContext.Response.Cookies.Append("assertionOptions", session.Pk, new CookieOptions
-            {
-                Expires = DateTimeOffset.Now.AddMinutes(30),
-                HttpOnly = true,
-                SameSite = SameSiteMode.Strict,
-                Secure = true
-            });
-
-            // 5. Return options to client
-            return Json(options);
-        }
-
-        catch (Exception e)
-        {
-            return Json(new AssertionOptions { Status = "error", ErrorMessage = FormatException(e) });
-        }
+        };
     }
 
     [HttpPost]
     [Route("/session/makeAssertion")]
-    public async Task<CommonResult<AccountMakeAssertion>> MakeAssertion([FromBody] AuthenticatorAssertionRawResponse clientResponse, CancellationToken cancellationToken)
+    public async Task<CommonResult<AccountMakeAssertion>> MakeAssertion([FromBody] MakeAssertionFormBody clientResponse, CancellationToken cancellationToken)
     {
 
-        var sessionPk = Request.Cookies["assertionOptions"];
-        logger.LogDebug($"sessionPk {sessionPk}");
-        var session = dataContext.Sessions.FirstOrDefault(s => s.Pk == sessionPk);
-        if (session == null)
+        // var sessionPk = Request.Cookies["assertionOptions"];
+        logger.LogDebug($"sessionPk {clientResponse}");
+        if (clientResponse == null || clientResponse.credential == null)
+        {
+            return new CommonResult<AccountMakeAssertion>
+            {
+                Code = 200,
+                Message = "credential is empty"
+            };
+        }
+        if (string.IsNullOrEmpty(clientResponse.session))
         {
             return new CommonResult<AccountMakeAssertion>
             {
@@ -115,10 +134,19 @@ public class SessionController : Controller
                 Message = "Session is empty"
             };
         }
+        var sessionModel = dataContext.Sessions.FirstOrDefault(s => s.Pk == clientResponse.session);
+        if (sessionModel == null)
+        {
+            return new CommonResult<AccountMakeAssertion>
+            {
+                Code = 200,
+                Message = "Session is empty2"
+            };
+        }
         //var jsonOptions = HttpContext.Session.GetString("fido2.assertionOptions");
-        var options = AssertionOptions.FromJson(session.Content);
+        var options = AssertionOptions.FromJson(sessionModel.Content);
 
-        var creds = _fido2Storage.GetCredentialById(clientResponse.Id) ?? throw new Exception("Unknown credentials");
+        var creds = _fido2Storage.GetCredentialById(clientResponse.credential.Id) ?? throw new Exception("Unknown credentials");
 
         var storedCounter = creds.SignatureCounter;
 
@@ -128,7 +156,7 @@ public class SessionController : Controller
             return storedCreds.Exists(c => c.Descriptor.Id.SequenceEqual(args.CredentialId));
         };
 
-        var res = await _fido2.MakeAssertionAsync(clientResponse, options, creds.PublicKey, storedCounter, callback, cancellationToken: cancellationToken);
+        var res = await _fido2.MakeAssertionAsync(clientResponse.credential, options, creds.PublicKey, storedCounter, callback, cancellationToken: cancellationToken);
 
         _fido2Storage.UpdateCounter(res.CredentialId, res.Counter);
 
@@ -144,10 +172,10 @@ public class SessionController : Controller
         return new CommonResult<AccountMakeAssertion>
         {
             Code = 200,
-            // Data = new AccountMakeAssertion
-            // {
-            //     Token = token
-            // }
+            Data = new AccountMakeAssertion
+            {
+                Authorization = $"Bearer {token}"
+            }
         };
     }
 
@@ -204,8 +232,18 @@ public class SessionController : Controller
         }
         var claims = JwtHelper.ValidateToken(token);
         var abc = claims?.Claims.FirstOrDefault();
-        return new CommonResult<object> { Code = 200, Data = new {
-            Username = abc?.Value,
-        } };
+        return new CommonResult<object>
+        {
+            Code = 200,
+            Data = new
+            {
+                Username = abc?.Value,
+            }
+        };
     }
+}
+
+public class MakeAssertionFormBody {
+    public string session { get; set; } = "";
+    public AuthenticatorAssertionRawResponse? credential { get; set; }
 }

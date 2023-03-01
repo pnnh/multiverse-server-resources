@@ -39,131 +39,158 @@ public class AccountController : Controller
 
     [HttpPost]
     [Route("/account/makeCredentialOptions")]
-    public JsonResult MakeCredentialOptions([FromForm] string username,
+    public CommonResult<object> MakeCredentialOptions([FromForm] string username,
                                             [FromForm] string displayName,
                                             [FromForm] string attType,
                                             [FromForm] string authType,
                                             [FromForm] bool requireResidentKey,
                                             [FromForm] string userVerification)
     {
-        try
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(username.Trim()))
         {
-
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(username.Trim()))
+            //return Json(new CredentialMakeResult(status: "error", errorMessage: "Username is required", result: null));
+            return new CommonResult<object>
             {
-                return Json(new CredentialMakeResult(status: "error", errorMessage: "Username is required", result: null));
+                Code = 400,
+                Message = "Username is required",
+                Data = null
+            };
+        }
+
+        // 1. Get user from DB by username (in our example, auto create missing users)
+        var user = _fido2Storage.GetOrAddUser(username, () => new Fido2User
+        {
+            DisplayName = displayName,
+            Name = username,
+            Id = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()),  // Encoding.UTF8.GetBytes(username) // byte representation of userID is required
+        });
+
+        // 2. Get user existing keys by username
+        var existingKeys = _fido2Storage.GetCredentialsByUser(user).Select(c => c.Descriptor).ToList();
+
+        // 3. Create options
+        var authenticatorSelection = new AuthenticatorSelection
+        {
+            RequireResidentKey = requireResidentKey,
+            UserVerification = userVerification.ToEnum<UserVerificationRequirement>()
+        };
+
+        if (!string.IsNullOrEmpty(authType))
+            authenticatorSelection.AuthenticatorAttachment = authType.ToEnum<AuthenticatorAttachment>();
+
+        var exts = new AuthenticationExtensionsClientInputs()
+        {
+            Extensions = true,
+            UserVerificationMethod = true,
+        };
+
+        var options = _fido2.RequestNewCredential(user, existingKeys, authenticatorSelection, attType.ToEnum<AttestationConveyancePreference>(), exts);
+
+        var session = new SessionTable
+        {
+            Pk = Guid.NewGuid().ToString(),
+            Content = options.ToJson(),
+            User = System.Text.Encoding.UTF8.GetString(user.Id),
+            CreateTime = DateTime.UtcNow,
+            UpdateTime = DateTime.UtcNow,
+            Type = "fido2.attestationOptions",
+        };
+        dataContext.Sessions.Add(session);
+        dataContext.SaveChanges();
+
+        return new CommonResult<object>
+        {
+            Code = 200,
+            Message = "success",
+            Data = new
+            {
+                session = session.Pk,
+                options = options,
             }
-
-            // 1. Get user from DB by username (in our example, auto create missing users)
-            var user = _fido2Storage.GetOrAddUser(username, () => new Fido2User
-            {
-                DisplayName = displayName,
-                Name = username,
-                Id = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()),  // Encoding.UTF8.GetBytes(username) // byte representation of userID is required
-            });
-
-            // 2. Get user existing keys by username
-            var existingKeys = _fido2Storage.GetCredentialsByUser(user).Select(c => c.Descriptor).ToList();
-
-            // 3. Create options
-            var authenticatorSelection = new AuthenticatorSelection
-            {
-                RequireResidentKey = requireResidentKey,
-                UserVerification = userVerification.ToEnum<UserVerificationRequirement>()
-            };
-
-            if (!string.IsNullOrEmpty(authType))
-                authenticatorSelection.AuthenticatorAttachment = authType.ToEnum<AuthenticatorAttachment>();
-
-            var exts = new AuthenticationExtensionsClientInputs()
-            {
-                Extensions = true,
-                UserVerificationMethod = true,
-            };
-
-            var options = _fido2.RequestNewCredential(user, existingKeys, authenticatorSelection, attType.ToEnum<AttestationConveyancePreference>(), exts);
-
-            // 4. Temporarily store options, session/in-memory cache/redis/db
-            //HttpContext.Session.SetString("fido2.attestationOptions", options.ToJson());
-            var session = new SessionTable
-            {
-                Pk = Guid.NewGuid().ToString(),
-                Content = options.ToJson(),
-                User = System.Text.Encoding.UTF8.GetString(user.Id),
-                CreateTime = DateTime.UtcNow,
-                UpdateTime = DateTime.UtcNow,
-                Type = "fido2.attestationOptions",
-            };
-            dataContext.Sessions.Add(session);
-            dataContext.SaveChanges();
-            HttpContext.Response.Cookies.Append("attestationOptions", session.Pk, new CookieOptions
-            {
-                Expires = DateTimeOffset.Now.AddMinutes(30),
-                HttpOnly = true,
-                SameSite = SameSiteMode.Strict,
-                Secure = true
-            });
-
-            // 5. return options to client
-            return Json(options);
-        }
-        catch (Exception e)
-        {
-            return Json(new CredentialCreateOptions { Status = "error", ErrorMessage = FormatException(e) });
-        }
+        };
     }
 
     [HttpPost]
     [Route("/account/makeCredential")]
-    public async Task<JsonResult> MakeCredential([FromBody] AuthenticatorAttestationRawResponse attestationResponse, CancellationToken cancellationToken)
+    public async Task<CommonResult<object>> MakeCredential([FromBody] MakeCredentialFormBody attestationResponse, CancellationToken cancellationToken)
     {
-        try
+        logger.LogDebug($"attestationResponse {attestationResponse}");
+        if (attestationResponse == null || attestationResponse.credential == null)
         {
-            var sessionPk = Request.Cookies["attestationOptions"];
-            logger.LogDebug($"sessionPk {sessionPk}");
-            var session = dataContext.Sessions.FirstOrDefault(s => s.Pk == sessionPk);
-            if (session == null)
+            //return Json(new CredentialMakeResult(status: "error", errorMessage: "No credentials object found in request", result: null));
+            return new CommonResult<object>
             {
-                return Json(new CredentialMakeResult(status: "error", errorMessage: "Registration failed", result: null));
-            }
-            // 1. get the options we sent the client
-            //var jsonOptions = HttpContext.Session.GetString("fido2.attestationOptions");
-            var options = CredentialCreateOptions.FromJson(session.Content);
-
-            // 2. Create callback so that lib can verify credential id is unique to this user
-            IsCredentialIdUniqueToUserAsyncDelegate callback = async (args, cancellationToken) =>
-            {
-                var users = await _fido2Storage.GetUsersByCredentialIdAsync(args.CredentialId, cancellationToken);
-                if (users.Count > 0)
-                    return false;
-
-                return true;
+                Code = 400,
+                Message = "No credentials object found in request",
+                Data = null
             };
-
-            // 2. Verify and make the credentials
-            var success = await _fido2.MakeNewCredentialAsync(attestationResponse, options, callback, cancellationToken: cancellationToken);
-
-            if (success == null || success.Result == null)
-                return Json(new CredentialMakeResult(status: "error", errorMessage: "Registration failed", result: null));
-
-            // 3. Store the credentials in db
-            _fido2Storage.AddCredentialToUser(options.User, new StoredCredential
-            {
-                Descriptor = new PublicKeyCredentialDescriptor(success.Result.CredentialId),
-                PublicKey = success.Result.PublicKey,
-                UserHandle = success.Result.User.Id,
-                SignatureCounter = success.Result.Counter,
-                CredType = success.Result.CredType,
-                RegDate = DateTime.UtcNow,
-                AaGuid = success.Result.Aaguid
-            });
-
-            // 4. return "ok" to the client
-            return Json(success);
         }
-        catch (Exception e)
+        // var sessionPk = Request.Cookies["attestationOptions"];
+        // logger.LogDebug($"sessionPk {sessionPk}");
+        var session = dataContext.Sessions.FirstOrDefault(s => s.Pk == attestationResponse.session);
+        if (session == null)
         {
-            return Json(new CredentialMakeResult(status: "error", errorMessage: FormatException(e), result: null));
+            //return Json(new CredentialMakeResult(status: "error", errorMessage: "Registration failed", result: null));
+            return new CommonResult<object>
+            {
+                Code = 400,
+                Message = "Registration failed",
+                Data = null
+            };
         }
+        // 1. get the options we sent the client
+        //var jsonOptions = HttpContext.Session.GetString("fido2.attestationOptions");
+        var options = CredentialCreateOptions.FromJson(session.Content);
+
+        // 2. Create callback so that lib can verify credential id is unique to this user
+        IsCredentialIdUniqueToUserAsyncDelegate callback = async (args, cancellationToken) =>
+        {
+            var users = await _fido2Storage.GetUsersByCredentialIdAsync(args.CredentialId, cancellationToken);
+            if (users.Count > 0)
+                return false;
+
+            return true;
+        };
+
+        // 2. Verify and make the credentials
+        var success = await _fido2.MakeNewCredentialAsync(attestationResponse.credential, options, callback, cancellationToken: cancellationToken);
+
+        if (success == null || success.Result == null)
+        {
+            //return Json(new CredentialMakeResult(status: "error", errorMessage: "Registration failed", result: null));
+            return new CommonResult<object>
+            {
+                Code = 400,
+                Message = "Registration failed",
+                Data = null
+            };
+        }
+
+        // 3. Store the credentials in db
+        _fido2Storage.AddCredentialToUser(options.User, new StoredCredential
+        {
+            Descriptor = new PublicKeyCredentialDescriptor(success.Result.CredentialId),
+            PublicKey = success.Result.PublicKey,
+            UserHandle = success.Result.User.Id,
+            SignatureCounter = success.Result.Counter,
+            CredType = success.Result.CredType,
+            RegDate = DateTime.UtcNow,
+            AaGuid = success.Result.Aaguid
+        });
+
+        // 4. return "ok" to the client
+        //return Json(success); 
+        return new CommonResult<object>
+        {
+            Code = 200,
+            Message = "success",
+            Data = success
+        };
     }
+}
+
+public class MakeCredentialFormBody
+{
+    public string session { get; set; } = "";
+    public AuthenticatorAttestationRawResponse? credential { get; set; }
 }

@@ -66,7 +66,7 @@ public class AccountTable
 
 public class AccountMakeAssertion
 {
-    public string Token { get; set; } = "";
+    public string Authorization { get; set; } = "";
 }
 
 public class AccountValidate
