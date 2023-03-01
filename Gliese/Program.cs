@@ -6,8 +6,13 @@ using Gliese.Models;
 using Microsoft.EntityFrameworkCore;
 using Gliese.Services;
 using System.Text.Encodings.Web;
-using System.Text.Unicode;
-using Microsoft.AspNetCore.CookiePolicy;
+using System.Text.Unicode; 
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using IdentityModel; 
 
 namespace Gliese
 {
@@ -41,13 +46,44 @@ namespace Gliese
             });
 
             services.AddMemoryCache();
-            services.AddDistributedMemoryCache();
-            services.AddCookiePolicy(options =>
-            {  
-                options.HttpOnly = HttpOnlyPolicy.Always;
-                options.MinimumSameSitePolicy = SameSiteMode.Strict;
-            });
+            services.AddDistributedMemoryCache(); 
 
+            var secretKey = PolarisConfig.GetConfig("JWT_SECRET");
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+              
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256, SecurityAlgorithms.RsaSha256 },
+                    ValidTypes = new[] { JwtConstants.HeaderType },
+
+                    ValidIssuer = "Polaris",
+                    ValidateIssuer = true,
+
+                    ValidAudience = "Polaris",
+                    ValidateAudience = true,
+
+                    IssuerSigningKey = securityKey,
+                    ValidateIssuerSigningKey = true,
+
+                    ValidateLifetime = true,
+
+                    RequireSignedTokens = true,
+                    RequireExpirationTime = true,
+
+                    NameClaimType = JwtClaimTypes.Name,
+                    RoleClaimType = JwtClaimTypes.Role,
+
+                    ClockSkew = TimeSpan.Zero,
+                };
+
+                options.SaveToken = true;
+
+                options.SecurityTokenValidators.Clear();
+                options.SecurityTokenValidators.Add(new JwtSecurityTokenHandler());
+            });
 
             services.AddFido2(options =>
             {
@@ -70,17 +106,19 @@ namespace Gliese
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                app.UseSwagger();
-                app.UseSwaggerUI();
             }
- 
-            app.UseRouting();
-            app.UseStaticFiles();
 
-            app.MapControllers();
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseAuthentication();
+
+            app.MapControllers(); 
+
+            app.UseAuthorization(); 
 
             app.Run();
         }
 
     }
 }
+

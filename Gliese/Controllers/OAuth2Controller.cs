@@ -89,15 +89,7 @@ public class OAuth2Controller : ControllerBase
             transaction.Commit();
         }
 
-        HttpContext.Response.Cookies.Append("openid", oauth2User.Data.Username, new CookieOptions
-        {
-            Expires = DateTimeOffset.Now.AddMinutes(30),
-            HttpOnly = true,
-            SameSite = SameSiteMode.Strict,
-            Secure = true
-        });
-
-        return Redirect("https://debug.polaris.direct");
+        return Redirect("https://debug.polaris.direct?openid=" + oauth2User.Data.Username);
     }
 
 }

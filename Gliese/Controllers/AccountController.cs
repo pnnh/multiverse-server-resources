@@ -9,12 +9,18 @@ using Fido2NetLib.Development;
 using Fido2NetLib.Objects;
 using Gliese.Models;
 using Gliese.Utils;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using static Fido2NetLib.Fido2;
 
 namespace Gliese.Controllers;
+
+
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class AccountController : Controller
 {
     private readonly ILogger<OAuth2Controller> logger;
@@ -22,22 +28,23 @@ public class AccountController : Controller
     private readonly Fido2Storage _fido2Storage;
     private IFido2 _fido2;
     public static IMetadataService? _mds;
-    //public static readonly DevelopmentInMemoryStore DemoStorage = new DevelopmentInMemoryStore();
-
-    public AccountController(ILogger<OAuth2Controller> logger, IFido2 fido2, BloggingContext configuration)
+    // private readonly JwtBearerOptions _jwtBearerOptions;
+    // private readonly SigningCredentials _signingCredentials;
+    public AccountController(ILogger<OAuth2Controller> logger, IFido2 fido2, BloggingContext configuration//,
+                                                                                                          // IOptionsSnapshot<JwtBearerOptions> jwtBearerOptions,
+                                                                                                          // SigningCredentials signingCredentials
+        )
     {
         this.logger = logger;
         _fido2 = fido2;
         this.dataContext = configuration;
         _fido2Storage = new Fido2Storage(configuration);
-    }
-
-    private string FormatException(Exception e)
-    {
-        return string.Format("{0}{1}", e.Message, e.InnerException != null ? " (" + e.InnerException.Message + ")" : "");
+        // _jwtBearerOptions = jwtBearerOptions.Get(JwtBearerDefaults.AuthenticationScheme);
+        // _signingCredentials = signingCredentials;
     }
 
     [HttpPost]
+    [AllowAnonymous]
     [Route("/account/makeCredentialOptions")]
     public CommonResult<object> MakeCredentialOptions([FromForm] string username,
                                             [FromForm] string displayName,
@@ -111,6 +118,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
+    [AllowAnonymous]
     [Route("/account/makeCredential")]
     public async Task<CommonResult<object>> MakeCredential([FromBody] MakeCredentialFormBody attestationResponse, CancellationToken cancellationToken)
     {
@@ -125,8 +133,7 @@ public class AccountController : Controller
                 Data = null
             };
         }
-        // var sessionPk = Request.Cookies["attestationOptions"];
-        // logger.LogDebug($"sessionPk {sessionPk}");
+        
         var session = dataContext.Sessions.FirstOrDefault(s => s.Pk == attestationResponse.session);
         if (session == null)
         {
@@ -185,6 +192,23 @@ public class AccountController : Controller
             Code = 200,
             Message = "success",
             Data = success
+        };
+    }
+
+    [HttpPost]
+    [Route("/account/userinfo")]
+    public CommonResult<object> UserInfo()
+    {
+        var user = HttpContext.User;
+        user.Claims.ToList().ForEach(c =>
+        {
+            logger.LogDebug($"{c.Type} {c.Value}");
+        });
+        return new CommonResult<object>
+        {
+            Code = 200,
+            Message = "success",
+            Data = "这是获取到的用户信息"
         };
     }
 }

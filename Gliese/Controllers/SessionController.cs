@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,8 +11,10 @@ using Fido2NetLib.Development;
 using Fido2NetLib.Objects;
 using Gliese.Models;
 using Gliese.Utils;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 using static Fido2NetLib.Fido2;
 
@@ -30,11 +34,6 @@ public class SessionController : Controller
         _fido2 = fido2;
         this.dataContext = configuration;
         _fido2Storage = new Fido2Storage(configuration);
-    }
-
-    private string FormatException(Exception e)
-    {
-        return string.Format("{0}{1}", e.Message, e.InnerException != null ? " (" + e.InnerException.Message + ")" : "");
     }
 
     [HttpPost]
@@ -104,7 +103,8 @@ public class SessionController : Controller
         return new CommonResult<object>
         {
             Code = 200,
-            Data = new {
+            Data = new
+            {
                 session = session.Pk,
                 options = options,
             }
@@ -115,8 +115,6 @@ public class SessionController : Controller
     [Route("/session/makeAssertion")]
     public async Task<CommonResult<AccountMakeAssertion>> MakeAssertion([FromBody] MakeAssertionFormBody clientResponse, CancellationToken cancellationToken)
     {
-
-        // var sessionPk = Request.Cookies["assertionOptions"];
         logger.LogDebug($"sessionPk {clientResponse}");
         if (clientResponse == null || clientResponse.credential == null)
         {
@@ -160,90 +158,41 @@ public class SessionController : Controller
 
         _fido2Storage.UpdateCounter(res.CredentialId, res.Counter);
 
-        var token = JwtHelper.GenerateToken("fakeUserId");
-        HttpContext.Response.Cookies.Append("Authorization", $"Bearer {token}", new CookieOptions
-        {
-            Expires = DateTimeOffset.Now.AddMinutes(30),
-            HttpOnly = true,
-            SameSite = SameSiteMode.Strict,
-            Secure = true
-        });
+        var token = JwtHelper.GenerateToken("fakeUserId2");
 
         return new CommonResult<AccountMakeAssertion>
         {
             Code = 200,
             Data = new AccountMakeAssertion
             {
-                Authorization = $"Bearer {token}"
-            }
+                Authorization = token
+            },
+            Message = "登录成功"
         };
     }
 
-    [HttpPost]
-    [Route("/session/validate")]
-    public CommonResult<AccountValidate> Validate(string? token = "")
-    {
-        if (string.IsNullOrEmpty(token))
-        {
-            return new CommonResult<AccountValidate>
-            {
-                Code = 400,
-                Message = "Token is empty"
-            };
-        }
-
-        var result = JwtHelper.ValidateToken(token);
-
-        if (result == null)
-        {
-            return new CommonResult<AccountValidate>
-            {
-                Code = 400,
-                Message = "Token is invalid"
-            };
-        }
-        var claim = result.Claims.FirstOrDefault(c => c.Type == "userId");
-        var name = claim?.Subject?.Name;
-        if (name == null)
-        {
-            return new CommonResult<AccountValidate>
-            {
-                Code = 400,
-                Message = "Token is invalid"
-            };
-        }
-
-        return new CommonResult<AccountValidate>
-        {
-            Code = 200,
-            Data = new AccountValidate
-            {
-                Name = name
-            }
-        };
-    }
-
-    [Route("/session/introspection")]
-    public CommonResult<object> Introspection(string token = "")
-    {
-        if (string.IsNullOrEmpty(token))
-        {
-            return new CommonResult<object> { Code = 401, Message = "无效token" };
-        }
-        var claims = JwtHelper.ValidateToken(token);
-        var abc = claims?.Claims.FirstOrDefault();
-        return new CommonResult<object>
-        {
-            Code = 200,
-            Data = new
-            {
-                Username = abc?.Value,
-            }
-        };
-    }
+    // [Route("/session/introspection")]
+    // public CommonResult<object> Introspection(string token = "")
+    // {
+    //     if (string.IsNullOrEmpty(token))
+    //     {
+    //         return new CommonResult<object> { Code = 401, Message = "无效token" };
+    //     }
+    //     var claims = JwtHelper.ValidateToken(token);
+    //     var abc = claims?.Claims.FirstOrDefault();
+    //     return new CommonResult<object>
+    //     {
+    //         Code = 200,
+    //         Data = new
+    //         {
+    //             Username = abc?.Value,
+    //         }
+    //     };
+    // }
 }
 
-public class MakeAssertionFormBody {
+public class MakeAssertionFormBody
+{
     public string session { get; set; } = "";
     public AuthenticatorAssertionRawResponse? credential { get; set; }
 }

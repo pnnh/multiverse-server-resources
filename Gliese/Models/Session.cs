@@ -35,4 +35,12 @@ namespace Gliese.Models
         [Column("update_time")]
         public DateTime UpdateTime { get; set; } = DateTime.MinValue; 
     }
+
+    public class SessionModel {
+        public string Pk { get; set; } = ""; 
+        public string User { get; set; } = "";
+        public string Type { get; set; } = "";
+        public DateTime CreateTime { get; set; } = DateTime.MinValue;
+        public DateTime UpdateTime { get; set; } = DateTime.MinValue;
+    }
 }
