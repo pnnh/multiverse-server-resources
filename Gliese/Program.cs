@@ -11,8 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.IdentityModel.Tokens;
-using IdentityModel; 
+using Microsoft.IdentityModel.Tokens; 
 
 namespace Gliese
 {
@@ -73,8 +72,8 @@ namespace Gliese
                     RequireSignedTokens = true,
                     RequireExpirationTime = true,
 
-                    NameClaimType = JwtClaimTypes.Name,
-                    RoleClaimType = JwtClaimTypes.Role,
+                    NameClaimType = ClaimTypes.Name,
+                    RoleClaimType = ClaimTypes.Role,
 
                     ClockSkew = TimeSpan.Zero,
                 };

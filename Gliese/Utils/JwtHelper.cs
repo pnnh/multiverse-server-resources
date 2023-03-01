@@ -15,10 +15,12 @@ public class JwtHelper
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
         var claims = new List<Claim> {
+            new Claim(ClaimTypes.Name,"呆呆地Name"),
+            new Claim(ClaimTypes.Role,"呆呆地Role"),
             new Claim(JwtRegisteredClaimNames.UniqueName, username),
             new Claim(JwtRegisteredClaimNames.Sub, username),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-    new Claim(ClaimTypes.NameIdentifier,"身份证号")
+            new Claim(ClaimTypes.NameIdentifier,"身份证号")
         };
         var token = new JwtSecurityToken(
             issuer: "Polaris",
@@ -30,7 +32,7 @@ public class JwtHelper
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public static ClaimsPrincipal ValidateToken(string token )
+    public static ClaimsPrincipal ValidateToken(string token)
     {
         var secretKey = PolarisConfig.GetConfig("JWT_SECRET");
         var tokenHandler = new JwtSecurityTokenHandler();

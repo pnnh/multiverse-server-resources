@@ -170,25 +170,7 @@ public class SessionController : Controller
             Message = "登录成功"
         };
     }
-
-    // [Route("/session/introspection")]
-    // public CommonResult<object> Introspection(string token = "")
-    // {
-    //     if (string.IsNullOrEmpty(token))
-    //     {
-    //         return new CommonResult<object> { Code = 401, Message = "无效token" };
-    //     }
-    //     var claims = JwtHelper.ValidateToken(token);
-    //     var abc = claims?.Claims.FirstOrDefault();
-    //     return new CommonResult<object>
-    //     {
-    //         Code = 200,
-    //         Data = new
-    //         {
-    //             Username = abc?.Value,
-    //         }
-    //     };
-    // }
+ 
 }
 
 public class MakeAssertionFormBody

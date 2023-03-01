@@ -133,7 +133,7 @@ public class AccountController : Controller
                 Data = null
             };
         }
-        
+
         var session = dataContext.Sessions.FirstOrDefault(s => s.Pk == attestationResponse.session);
         if (session == null)
         {
@@ -204,6 +204,7 @@ public class AccountController : Controller
         {
             logger.LogDebug($"{c.Type} {c.Value}");
         });
+        logger.LogDebug($"user name: {user.Identity?.Name}");
         return new CommonResult<object>
         {
             Code = 200,
