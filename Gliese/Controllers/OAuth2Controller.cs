@@ -64,7 +64,7 @@ public class OAuth2Controller : ControllerBase
         }
         using (var transaction = dataContext.Database.BeginTransaction())
         {
-            var dbUser = dataContext.Users.FirstOrDefault(m => m.Username == oauth2User.Data.Username);
+            var dbUser = dataContext.Accounts.FirstOrDefault(m => m.Account == oauth2User.Data.Username);
             if (dbUser != null)
             {
                 dataContext.Attach(dbUser);
@@ -75,14 +75,14 @@ public class OAuth2Controller : ControllerBase
             }
             else
             {
-                dbUser = new UserTable
+                dbUser = new AccountTable
                 {
                     Pk = Guid.NewGuid().ToString(),
-                    Username = oauth2User.Data.Username,
+                    Account = oauth2User.Data.Username,
                     Nickname = oauth2User.Data.Nickname,
                     AccessToken = tokenModel.AccessToken
                 };
-                dataContext.Users.Add(dbUser);
+                dataContext.Accounts.Add(dbUser);
             }
             dataContext.SaveChanges();
 

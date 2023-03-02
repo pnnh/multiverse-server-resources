@@ -132,17 +132,22 @@ public class SessionController : Controller
                 Message = "Session is empty"
             };
         }
-        var sessionModel = dataContext.Sessions.FirstOrDefault(s => s.Pk == clientResponse.session);
-        if (sessionModel == null)
+        //var sessionModel = dataContext.Sessions.FirstOrDefault(s => s.Pk == clientResponse.session);
+        var sessionResult = dataContext.Sessions.Join(dataContext.Accounts, s => s.User, u => u.Pk, (s, u) => new
+        {
+            Session = s,
+            User = u
+        }).FirstOrDefault();
+        if (sessionResult == null || sessionResult.Session == null || sessionResult.User == null)
         {
             return new CommonResult<AccountMakeAssertion>
             {
                 Code = 200,
                 Message = "Session is empty2"
             };
-        }
-        //var jsonOptions = HttpContext.Session.GetString("fido2.assertionOptions");
-        var options = AssertionOptions.FromJson(sessionModel.Content);
+        } 
+        var userModel = sessionResult.User;
+        var options = AssertionOptions.FromJson(sessionResult.Session.Content);
 
         var creds = _fido2Storage.GetCredentialById(clientResponse.credential.Id) ?? throw new Exception("Unknown credentials");
 
@@ -158,7 +163,7 @@ public class SessionController : Controller
 
         _fido2Storage.UpdateCounter(res.CredentialId, res.Counter);
 
-        var token = JwtHelper.GenerateToken("fakeUserId2");
+        var token = JwtHelper.GenerateToken(userModel.Account);
 
         return new CommonResult<AccountMakeAssertion>
         {
@@ -170,7 +175,7 @@ public class SessionController : Controller
             Message = "登录成功"
         };
     }
- 
+
 }
 
 public class MakeAssertionFormBody

@@ -42,6 +42,9 @@ public class AccountTable
     [Column("counter")]
     public uint? Counter { get; set; } = 0;
 
+    [Column("access_token")]
+    public string? AccessToken { get; set; } = "";
+
     public Fido2User ToFido2User()
     {
         return new Fido2User

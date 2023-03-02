@@ -197,7 +197,7 @@ public class AccountController : Controller
 
     [HttpPost]
     [Route("/account/userinfo")]
-    public CommonResult<object> UserInfo()
+    public CommonResult<AccountTable> UserInfo()
     {
         var user = HttpContext.User;
         user.Claims.ToList().ForEach(c =>
@@ -205,11 +205,28 @@ public class AccountController : Controller
             logger.LogDebug($"{c.Type} {c.Value}");
         });
         logger.LogDebug($"user name: {user.Identity?.Name}");
-        return new CommonResult<object>
+        if (user.Identity == null || string.IsNullOrEmpty(user.Identity.Name))
+        {
+            return new CommonResult<AccountTable>
+            {
+                Code = 400,
+                Message = "用户未登录"
+            };
+        }
+        var userInfo = dataContext.Accounts.FirstOrDefault(a => a.Account == user.Identity.Name);
+        if (userInfo == null)
+        {
+            return new CommonResult<AccountTable>
+            {
+                Code = 400,
+                Message = "获取用户信息出错: 用户不存在"
+            };
+        }
+        return new CommonResult<AccountTable>
         {
             Code = 200,
             Message = "success",
-            Data = "这是获取到的用户信息"
+            Data = userInfo
         };
     }
 }
