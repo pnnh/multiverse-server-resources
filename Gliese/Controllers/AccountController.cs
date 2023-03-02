@@ -1,21 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Fido2NetLib;
+﻿using Fido2NetLib;
 using Fido2NetLib.Development;
 using Fido2NetLib.Objects;
 using Gliese.Models;
-using Gliese.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using static Fido2NetLib.Fido2;
 
 namespace Gliese.Controllers;
 
@@ -55,7 +44,6 @@ public class AccountController : Controller
     {
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(username.Trim()))
         {
-            //return Json(new CredentialMakeResult(status: "error", errorMessage: "Username is required", result: null));
             return new CommonResult<object>
             {
                 Code = 400,
@@ -63,19 +51,20 @@ public class AccountController : Controller
                 Data = null
             };
         }
+        if (string.IsNullOrEmpty(displayName) || string.IsNullOrEmpty(displayName.Trim()))
+        {
+            displayName = username;
+        }
 
-        // 1. Get user from DB by username (in our example, auto create missing users)
         var user = _fido2Storage.GetOrAddUser(username, () => new Fido2User
         {
             DisplayName = displayName,
             Name = username,
-            Id = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()),  // Encoding.UTF8.GetBytes(username) // byte representation of userID is required
+            Id = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()), 
         });
 
-        // 2. Get user existing keys by username
         var existingKeys = _fido2Storage.GetCredentialsByUser(user).Select(c => c.Descriptor).ToList();
 
-        // 3. Create options
         var authenticatorSelection = new AuthenticatorSelection
         {
             RequireResidentKey = requireResidentKey,
@@ -125,7 +114,6 @@ public class AccountController : Controller
         logger.LogDebug($"attestationResponse {attestationResponse}");
         if (attestationResponse == null || attestationResponse.credential == null)
         {
-            //return Json(new CredentialMakeResult(status: "error", errorMessage: "No credentials object found in request", result: null));
             return new CommonResult<object>
             {
                 Code = 400,
@@ -137,7 +125,6 @@ public class AccountController : Controller
         var session = dataContext.Sessions.FirstOrDefault(s => s.Pk == attestationResponse.session);
         if (session == null)
         {
-            //return Json(new CredentialMakeResult(status: "error", errorMessage: "Registration failed", result: null));
             return new CommonResult<object>
             {
                 Code = 400,
@@ -145,11 +132,8 @@ public class AccountController : Controller
                 Data = null
             };
         }
-        // 1. get the options we sent the client
-        //var jsonOptions = HttpContext.Session.GetString("fido2.attestationOptions");
         var options = CredentialCreateOptions.FromJson(session.Content);
 
-        // 2. Create callback so that lib can verify credential id is unique to this user
         IsCredentialIdUniqueToUserAsyncDelegate callback = async (args, cancellationToken) =>
         {
             var users = await _fido2Storage.GetUsersByCredentialIdAsync(args.CredentialId, cancellationToken);
@@ -159,12 +143,10 @@ public class AccountController : Controller
             return true;
         };
 
-        // 2. Verify and make the credentials
         var success = await _fido2.MakeNewCredentialAsync(attestationResponse.credential, options, callback, cancellationToken: cancellationToken);
 
         if (success == null || success.Result == null)
         {
-            //return Json(new CredentialMakeResult(status: "error", errorMessage: "Registration failed", result: null));
             return new CommonResult<object>
             {
                 Code = 400,
@@ -173,7 +155,6 @@ public class AccountController : Controller
             };
         }
 
-        // 3. Store the credentials in db
         _fido2Storage.AddCredentialToUser(options.User, new StoredCredential
         {
             Descriptor = new PublicKeyCredentialDescriptor(success.Result.CredentialId),
@@ -185,8 +166,6 @@ public class AccountController : Controller
             AaGuid = success.Result.Aaguid
         });
 
-        // 4. return "ok" to the client
-        //return Json(success); 
         return new CommonResult<object>
         {
             Code = 200,

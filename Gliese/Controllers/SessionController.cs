@@ -90,7 +90,7 @@ public class SessionController : Controller
         {
             Pk = Guid.NewGuid().ToString(),
             Content = options.ToJson(),
-            //User = System.Text.Encoding.UTF8.GetString(user.Id),
+            User = Base64UrlEncoder.Encode(user.Id),
             CreateTime = DateTime.UtcNow,
             UpdateTime = DateTime.UtcNow,
             Type = "fido2.assertionOptions",
@@ -129,23 +129,24 @@ public class SessionController : Controller
             return new CommonResult<AccountMakeAssertion>
             {
                 Code = 200,
-                Message = "Session is empty"
+                Message = "Session is empty4"
             };
         }
         //var sessionModel = dataContext.Sessions.FirstOrDefault(s => s.Pk == clientResponse.session);
-        var sessionResult = dataContext.Sessions.Join(dataContext.Accounts, s => s.User, u => u.Pk, (s, u) => new
+        var sessionResult = dataContext.Sessions.Join(dataContext.Accounts, s => s.User, u => u.Pk, (s, u) => new { s, u })
+        .Where(o => o.s.Pk == clientResponse.session).Select(o => new
         {
-            Session = s,
-            User = u
+            Session = o.s,
+            User = o.u
         }).FirstOrDefault();
         if (sessionResult == null || sessionResult.Session == null || sessionResult.User == null)
         {
             return new CommonResult<AccountMakeAssertion>
             {
                 Code = 200,
-                Message = "Session is empty2"
+                Message = "Session is empty3"
             };
-        } 
+        }
         var userModel = sessionResult.User;
         var options = AssertionOptions.FromJson(sessionResult.Session.Content);
 
