@@ -1,7 +1,5 @@
-using System.ComponentModel.DataAnnotations.Schema;
-using Fido2NetLib;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.DataAnnotations.Schema; 
+using Microsoft.EntityFrameworkCore; 
 
 namespace Gliese.Models;
 
@@ -44,27 +42,8 @@ public class AccountTable
 
     [Column("access_token")]
     public string? AccessToken { get; set; } = "";
-
-    public Fido2User ToFido2User()
-    {
-        return new Fido2User
-        {
-            DisplayName = this.Nickname,
-            Name = this.Account,
-            Id = System.Text.Encoding.UTF8.GetBytes(this.Pk),
-        };
-    }
-
-    public static AccountTable FromFido2User(Fido2User user)
-    {
-        var table = new AccountTable();
-        table.Pk =  System.Text.Encoding.UTF8.GetString(user.Id);//Guid.NewGuid().ToString();
-        table.Nickname = user.DisplayName;
-        table.Account = user.Name; 
-        table.CreateTime = DateTime.UtcNow;
-        table.UpdateTime = DateTime.UtcNow;
-        return table;
-    }
+ 
+ 
 }
 
 public class AccountMakeAssertion

@@ -7,11 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Gliese.Services;
 using System.Text.Encodings.Web;
 using System.Text.Unicode; 
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.IdentityModel.Tokens; 
+using Microsoft.AspNetCore.Authentication;
 
 namespace Gliese
 {
@@ -45,60 +41,10 @@ namespace Gliese
             });
 
             services.AddMemoryCache();
-            services.AddDistributedMemoryCache(); 
-
-            var secretKey = PolarisConfig.GetConfig("JWT_SECRET");
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-              
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256, SecurityAlgorithms.RsaSha256 },
-                    ValidTypes = new[] { JwtConstants.HeaderType },
-
-                    ValidIssuer = "Polaris",
-                    ValidateIssuer = true,
-
-                    ValidAudience = "Polaris",
-                    ValidateAudience = true,
-
-                    IssuerSigningKey = securityKey,
-                    ValidateIssuerSigningKey = true,
-
-                    ValidateLifetime = true,
-
-                    RequireSignedTokens = true,
-                    RequireExpirationTime = true,
-
-                    NameClaimType = ClaimTypes.Name,
-                    RoleClaimType = ClaimTypes.Role,
-
-                    ClockSkew = TimeSpan.Zero,
-                };
-
-                options.SaveToken = true;
-
-                options.SecurityTokenValidators.Clear();
-                options.SecurityTokenValidators.Add(new JwtSecurityTokenHandler());
-            });
-
-            services.AddFido2(options =>
-            {
-                options.ServerDomain = "debug.polaris.direct";
-                options.ServerName = "Polaris";
-                options.Origins = new HashSet<string>() { "https://debug.polaris.direct" };
-                options.TimestampDriftTolerance = 300000;
-                options.MDSCacheDirPath = "";
-            })
-            .AddCachedMetadataService(config =>
-            {
-                config.AddFidoMetadataRepository(httpClientBuilder =>
-                {
-                    //TODO: any specific config you want for accessing the MDS
-                });
-            });
+ 
+            services.AddAuthentication("BasicAuthentication")
+                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>
+                ("BasicAuthentication", null);
 
             var app = builder.Build();
 
@@ -111,9 +57,9 @@ namespace Gliese
             app.UseRouting();
             app.UseAuthentication();
 
-            app.MapControllers(); 
+            app.MapControllers();
 
-            app.UseAuthorization(); 
+            app.UseAuthorization();
 
             app.Run();
         }

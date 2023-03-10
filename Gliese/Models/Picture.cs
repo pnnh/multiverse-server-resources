@@ -1,5 +1,5 @@
 
-using Venus.Models;
+
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Venus.Models
+namespace Gliese.Models
 {
     [Table("pictures")]
     [PrimaryKey(nameof(Pk))]
