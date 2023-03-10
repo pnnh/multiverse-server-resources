@@ -8,9 +8,9 @@ namespace Gliese.Controllers;
 [Authorize()]
 public class AccountController : Controller
 {
-    private readonly ILogger<OAuth2Controller> logger;
+    private readonly ILogger<AccountController> logger;
     private readonly BloggingContext dataContext;
-    public AccountController(ILogger<OAuth2Controller> logger, BloggingContext configuration)
+    public AccountController(ILogger<AccountController> logger, BloggingContext configuration)
     {
         this.logger = logger;
         this.dataContext = configuration;

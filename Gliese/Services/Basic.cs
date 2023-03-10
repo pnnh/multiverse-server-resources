@@ -28,16 +28,16 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
             System.Console.WriteLine(token);
             var credentialstring = Encoding.UTF8.GetString(Convert.FromBase64String(token));
             var credentials = credentialstring.Split(':');
-            if (credentials[0] == "admin" && credentials[1] == "admin")
+            //if (credentials[0] == "admin" && credentials[1] == "admin")
+            if (credentials.Length == 2)
             {
                 var username = credentials[0];
                 var claims = new[] { 
-                    //new Claim("name", credentials[0]), 
-                    new Claim(ClaimTypes.Role, "Admin"),
+                    //new Claim("name", credentials[0]),  
                     new Claim(ClaimTypes.Name, username),
                     new Claim(ClaimTypes.Role, "user"),
                     new Claim(ClaimTypes.NameIdentifier, username)
-                     };
+                };
                 var identity = new ClaimsIdentity(claims, "Basic");
                 var claimsPrincipal = new ClaimsPrincipal(identity);
                 return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(claimsPrincipal, Scheme.Name)));
