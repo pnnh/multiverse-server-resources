@@ -6,7 +6,7 @@ using Gliese.Models;
 using Microsoft.EntityFrameworkCore;
 using Gliese.Services;
 using System.Text.Encodings.Web;
-using System.Text.Unicode; 
+using System.Text.Unicode;
 using Microsoft.AspNetCore.Authentication;
 
 namespace Gliese
@@ -35,13 +35,13 @@ namespace Gliese
 
             var pgDsn = PolarisConfig.GetConfig("CSHARP_DSN");
 
-            builder.Services.AddDbContext<BloggingContext>(options =>
+            builder.Services.AddDbContext<DatabaseContext>(options =>
             {
                 options.UseNpgsql(pgDsn);
             });
 
             services.AddMemoryCache();
- 
+
             services.AddAuthentication("BasicAuthentication")
                 .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>
                 ("BasicAuthentication", null);

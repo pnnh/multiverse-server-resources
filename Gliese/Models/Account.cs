@@ -35,14 +35,13 @@ public class AccountTable
     public int Status { get; set; } = 0;
 
     [Column("nickname")]
-    public string? Nickname { get; set; } = "";
+    public string? Nickname { get; set; } = ""; 
 
-    [Column("counter")]
-    public uint? Counter { get; set; } = 0;
+    [Column("credentials")]
+    public string? Credentials { get; set; } = ""; 
 
-    [Column("access_token")]
-    public string? AccessToken { get; set; } = "";
- 
+    [Column("session")]
+    public string? Session { get; set; } = ""; 
  
 }
 

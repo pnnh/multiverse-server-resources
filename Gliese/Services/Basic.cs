@@ -29,6 +29,7 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
             var credentialstring = Encoding.UTF8.GetString(Convert.FromBase64String(token));
             var credentials = credentialstring.Split(':');
             //if (credentials[0] == "admin" && credentials[1] == "admin")
+            // ToDo 需要校验用户名和密码
             if (credentials.Length == 2)
             {
                 var username = credentials[0];
@@ -43,14 +44,14 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
                 return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(claimsPrincipal, Scheme.Name)));
             }
 
-            Response.StatusCode = 401;
-            Response.Headers.Add("WWW-Authenticate", "Basic realm=\"dotnetthoughts.net\"");
+            //Response.StatusCode = 401;
+            //Response.Headers.Add("WWW-Authenticate", "Basic realm=\"dotnetthoughts.net\"");
             return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization Header"));
         }
         else
         {
-            Response.StatusCode = 401;
-            Response.Headers.Add("WWW-Authenticate", "Basic realm=\"dotnetthoughts.net\"");
+          //Response.StatusCode = 401;
+            //Response.Headers.Add("WWW-Authenticate", "Basic realm=\"dotnetthoughts.net\"");
             return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization Header2"));
         }
     }

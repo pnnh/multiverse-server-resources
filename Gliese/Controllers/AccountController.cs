@@ -1,4 +1,4 @@
-﻿using Gliese.Models; 
+﻿using Gliese.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,13 +9,13 @@ namespace Gliese.Controllers;
 public class AccountController : Controller
 {
     private readonly ILogger<AccountController> logger;
-    private readonly BloggingContext dataContext;
-    public AccountController(ILogger<AccountController> logger, BloggingContext configuration)
+    private readonly DatabaseContext dataContext;
+    public AccountController(ILogger<AccountController> logger, DatabaseContext configuration)
     {
         this.logger = logger;
         this.dataContext = configuration;
     }
-    
+
     [HttpPost]
     [Route("/account/userinfo")]
     public CommonResult<AccountTable> UserInfo()

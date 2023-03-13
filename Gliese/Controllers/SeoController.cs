@@ -11,10 +11,10 @@ namespace Gliese.Controllers;
 public class SeoController : ControllerBase
 {
     private readonly ILogger<SeoController> logger;
-    private readonly BloggingContext dataContext;
+    private readonly DatabaseContext dataContext;
 
 
-    public SeoController(ILogger<SeoController> logger, BloggingContext configuration)
+    public SeoController(ILogger<SeoController> logger, DatabaseContext configuration)
     {
         this.logger = logger;
         dataContext = configuration;
@@ -33,16 +33,16 @@ public class SeoController : ControllerBase
             TimeStamp = DateTime.UtcNow
         });
 
-        var fBlogs = dataContext.Articles.Where(b => b.Title != "").ToList();
+        var fBlogs = dataContext.Resources.Where(b => b.Title != "").ToList();
         foreach (var a in fBlogs)
         {
-            var readUrl = PolarisConfig.SelfUrl + $"/article/read/{a.Pk}";
+            var readUrl = PolarisConfig.SelfUrl + $"/resource/read/{a.Pk}";
             var item = new Url
             {
                 ChangeFrequency = ChangeFrequency.Yearly,
                 Location = readUrl,
                 Priority = 0.5,
-                TimeStamp = a.UpdateTime
+                TimeStamp = a.UpdateAt
             };
             sitemap.Add(item);
         }

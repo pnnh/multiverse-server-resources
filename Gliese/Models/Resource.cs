@@ -13,12 +13,18 @@ using Gliese.Utils;
 namespace Gliese.Models
 {
 
-    [Table("articles")]
+    [Table("resources")]
     [PrimaryKey(nameof(Pk))]
-    public class ArticleTable
+    public class ResourceTable
     {
         [Column("pk")]
         public string Pk { get; set; } = "";
+
+        [Column("createat")]
+        public DateTime CreateAt { get; set; } = DateTime.MinValue;
+
+        [Column("updateat")]
+        public DateTime UpdateAt { get; set; } = DateTime.MinValue;
 
         [Column("title")]
         public string Title { get; set; } = "";
@@ -29,24 +35,21 @@ namespace Gliese.Models
         [Column("body")]
         public string Body { get; set; } = "";
 
-        [Column("create_time")]
-        public DateTime CreateTime { get; set; } = DateTime.MinValue;
-
-        [Column("update_time")]
-        public DateTime UpdateTime { get; set; } = DateTime.MinValue;
-
         [Column("creator")]
         public string Creator { get; set; } = "";
 
-        [Column("keywords")]
-        public string? Keywords { get; set; } = "";
+        [Column("tags")]
+        public string? Tags { get; set; } = "";
 
         [Column("description")]
-        public string? Description { get; set; } = ""; 
+        public string? Description { get; set; } = "";
 
         [Column("status")]
-        public int Status { get; set; } = 0; 
-        
+        public int Status { get; set; } = 0;
+
+        [Column("version")]
+        public int Version { get; set; } = 0;
+
         [Column("cover")]
         public string? Cover { get; set; } = "";
     }

@@ -5,16 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
-public class BloggingContext : DbContext
+public class DatabaseContext : DbContext
 {
-    public DbSet<ArticleTable> Articles => Set<ArticleTable>();
-    public DbSet<ArticleExtendTable> ArticleExtendTable => Set<ArticleExtendTable>();
-    public DbSet<ArticleViewerTable> ArticleViewerTable => Set<ArticleViewerTable>(); 
     public DbSet<AccountTable> Accounts => Set<AccountTable>();
-    public DbSet<CredentialTable> Credentials => Set<CredentialTable>();
-    public DbSet<SessionTable> Sessions => Set<SessionTable>();
+    public DbSet<ResourceTable> Resources => Set<ResourceTable>();
 
-    public BloggingContext(DbContextOptions<BloggingContext> options) : base(options)
+    public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
     {
     }
 }
